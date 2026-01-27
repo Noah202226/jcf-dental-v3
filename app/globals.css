@@ -1,0 +1,108 @@
+@import "tailwindcss";
+@plugin "daisyui";
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  /* Light Mode - Ultra Modern Clinic Aesthetic */
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --theme-color: #10b981;
+  --theme-hover: #059669;
+
+  /* Toast Variables */
+  --toast-bg: rgba(255, 255, 255, 0.85);
+  --toast-color: #18181b;
+  --toast-border: rgba(0, 0, 0, 0.08);
+
+  /* Modern Radius */
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2.5rem;
+}
+
+.dark {
+  /* Dark Mode - Deep Midnight Slate */
+  --background: #020617;
+  --foreground: #f8fafc;
+  --card: #0f172a;
+  --theme-color: #34d399;
+  --theme-hover: #10b981;
+
+  /* Toast Variables Dark */
+  --toast-bg: rgba(15, 23, 42, 0.9);
+  --toast-color: #f8fafc;
+  --toast-border: rgba(255, 255, 255, 0.1);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-primary: var(--theme-color);
+  --color-primary-hover: var(--theme-hover);
+  --font-sans: var(--font-montserrat), ui-sans-serif, system-ui;
+}
+
+/* Global Smooth Transitions */
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  transition:
+    background-color 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.5s ease;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* MODERN LAYOUT UTILITIES 
+*/
+
+/* High-Gloss Card: Perfect for the Patient List */
+.glass-card {
+  @apply bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl border border-white/20 dark:border-white/5 shadow-[0_8px_32px_0_rgba(0,0,0,0.08)];
+}
+
+/* Floating Action Button Style */
+.btn-modern {
+  @apply relative overflow-hidden transition-all duration-300 active:scale-95 hover:shadow-lg hover:shadow-emerald-500/20 disabled:opacity-50;
+}
+
+/* DAISYUI OVERRIDES 
+*/
+.modal-box {
+  @apply rounded-[var(--radius-2xl)] border border-white/10 shadow-2xl;
+}
+
+.btn-primary {
+  @apply bg-emerald-600 border-none hover:bg-emerald-500 text-white font-black uppercase tracking-widest text-[10px] py-4 px-8 transition-all active:scale-95;
+}
+
+.input,
+.select,
+.textarea {
+  @apply bg-zinc-100/50 dark:bg-zinc-800/40 border-zinc-200/50 dark:border-zinc-700/50 focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/10 transition-all rounded-2xl font-medium;
+}
+
+/* CUSTOM SCROLLBAR (Minimalist)
+*/
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-zinc-300 dark:bg-zinc-700 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-emerald-500/50;
+}
+
+/* Text Selection */
+::selection {
+  @apply bg-emerald-500/20 text-emerald-600 dark:text-emerald-400;
+}
