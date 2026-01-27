@@ -115,7 +115,7 @@ export default function Hero() {
             className="flex flex-col sm:flex-row items-center gap-6"
           >
             <a
-              href="https://appointment-dental-clinic-arctech-v3.vercel.app/"
+              href="https://appointment-jcf-dental-clinic-v3.vercel.app/"
               target="_blank"
               className="group flex items-center gap-3 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-8 py-5 rounded-full text-lg font-bold shadow-2xl hover:bg-emerald-600 dark:hover:bg-emerald-500 hover:text-white transition-all hover:-translate-y-1"
             >
