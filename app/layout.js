@@ -11,8 +11,8 @@ const montserrat = Montserrat({
 });
 
 // ✅ Metadata is now safe here because this is a Server Component
-const APP_NAME = "PWA App";
-const APP_DEFAULT_TITLE = "My Awesome PWA App";
+const APP_NAME = "JCF Dental Clinic";
+const APP_DEFAULT_TITLE = "JCF Dental Clinic - v3 ";
 const APP_TITLE_TEMPLATE = "%s - PWA App";
 const APP_DESCRIPTION = "Best PWA app in the world!";
 
