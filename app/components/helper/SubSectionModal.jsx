@@ -17,21 +17,26 @@ const sectionMap = {
 
 // --- MODERN DENTAL CHART SUB-COMPONENTS ---
 
-const LegendItem = ({ color, label, count }) => (
-  <div className="flex justify-between items-center group">
-    <div className="flex items-center gap-2">
-      <div
-        className={`w-2.5 h-2.5 rounded-full ${color} shadow-sm group-hover:scale-110 transition-transform`}
-      />
-      <span className="text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-tight">
-        {label}
+function LegendItem({ color, label, abbr, count }) {
+  return (
+    <div className="flex items-center justify-between group">
+      <div className="flex items-center gap-3">
+        <div className={`w-3 h-3 rounded-full ${color}`} />
+        <div className="flex flex-col">
+          <span className="text-[10px] font-bold text-zinc-600 dark:text-zinc-300 leading-none">
+            {label}
+          </span>
+          {abbr && (
+            <span className="text-[8px] text-zinc-400 font-black">{abbr}</span>
+          )}
+        </div>
+      </div>
+      <span className="text-[10px] font-black text-zinc-400 group-hover:text-zinc-800 transition-colors">
+        {count}
       </span>
     </div>
-    <span className="text-xs font-black text-zinc-300 dark:text-zinc-600">
-      {count || 0}
-    </span>
-  </div>
-);
+  );
+}
 
 const ActionButton = ({ color, label, onClick }) => (
   <button
@@ -350,26 +355,26 @@ export default function SubSectionModal({
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        className="modal-box w-full max-w-6xl max-h-[95vh] lg:max-h-[90vh] bg-[#FBFBFB] dark:bg-zinc-950 rounded-[2rem] lg:rounded-[2.5rem] p-0 overflow-hidden border border-[#DCD1B4] dark:border-zinc-800 shadow-2xl flex flex-col"
+        className="modal-box w-full max-w-7xl max-h-[95vh] lg:max-h-[90vh] bg-[#FBFBFB] dark:bg-zinc-950 rounded-[2rem] lg:rounded-[2.5rem] p-0 overflow-hidden border border-[#DCD1B4] dark:border-zinc-800 shadow-2xl flex flex-col"
       >
-        <div className="p-6 lg:p-8 border-b border-[#E6D8BA] dark:border-zinc-800 bg-white dark:bg-zinc-900 flex justify-between items-center shrink-0">
+        <div className="p-4 lg:p-8 border-b border-[#E6D8BA] dark:border-zinc-800 bg-white dark:bg-zinc-900 flex justify-between items-center shrink-0 sticky top-0 z-50">
           <div>
-            <h3 className="font-black text-xl lg:text-2xl uppercase tracking-tight text-zinc-800 dark:text-zinc-100">
+            <h3 className="font-black text-lg lg:text-2xl uppercase tracking-tight text-zinc-800 dark:text-zinc-100">
               {title}
             </h3>
-            <p className="text-[9px] lg:text-[10px] font-black text-zinc-400 uppercase tracking-widest mt-1">
-              Patient Clinical Dashboard
+            <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mt-0.5">
+              Clinical Dashboard
             </p>
           </div>
           <button
             onClick={onClose}
-            className="btn btn-sm lg:btn-md btn-circle btn-ghost hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-500 transition-all"
+            className="btn btn-sm btn-circle btn-ghost hover:bg-red-50 text-zinc-500"
           >
             ✕
           </button>
         </div>
 
-        <div className="p-4 lg:p-8 overflow-y-auto custom-scrollbar flex-1">
+        <div className="p-4 lg:p-8 overflow-y-auto custom-scrollbar flex-1 pb-32 sm:pb-8">
           {collectionId === "dentalchart" ? (
             <DentalChartSection
               items={items}
@@ -438,51 +443,150 @@ function DentalChartSection({
     48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38,
   ];
 
+  // Grouped for better UI organization
+  const CONDITION_GROUPS = [
+    {
+      name: "Clinical Status (Red = Caries/Defect)",
+      items: [
+        { id: "caries", label: "Caries", abbr: "C", color: "bg-red-500" },
+        {
+          id: "recurrent_caries",
+          label: "Recurrent Caries",
+          abbr: "RC",
+          color: "bg-red-600",
+        },
+        { id: "fractured", label: "Fractured", abbr: "F", color: "bg-red-700" },
+        {
+          id: "impacted",
+          label: "Impacted",
+          abbr: "Imp",
+          color: "bg-orange-500",
+        },
+        {
+          id: "unerupted",
+          label: "Unerupted",
+          abbr: "Un",
+          color: "bg-orange-400",
+        },
+        {
+          id: "extraction",
+          label: "Indicated for Extraction",
+          abbr: "X",
+          color: "bg-zinc-900",
+        },
+        { id: "missing", label: "Missing", abbr: "M", color: "bg-zinc-400" },
+      ],
+    },
+    {
+      name: "Restorations (Blue = Restorations)",
+      items: [
+        { id: "amalgam", label: "Amalgam", abbr: "Am", color: "bg-blue-600" },
+        {
+          id: "composite",
+          label: "Composite",
+          abbr: "Co",
+          color: "bg-blue-500",
+        },
+        {
+          id: "glassionomer",
+          label: "Glassionomer",
+          abbr: "GI",
+          color: "bg-cyan-500",
+        },
+        {
+          id: "sealant",
+          label: "Pit and Fissure Sealant",
+          abbr: "PFS",
+          color: "bg-sky-400",
+        },
+        { id: "inlay", label: "Inlay", abbr: "In", color: "bg-indigo-500" },
+      ],
+    },
+    {
+      name: "Prosthodontics & Others",
+      items: [
+        {
+          id: "abutment",
+          label: "Abutment",
+          abbr: "Ab",
+          color: "bg-purple-600",
+        },
+        {
+          id: "apc",
+          label: "All Porcelain Crown",
+          abbr: "APC",
+          color: "bg-purple-500",
+        },
+        {
+          id: "pfc",
+          label: "Porcelain Fused to Metal",
+          abbr: "PFM",
+          color: "bg-fuchsia-600",
+        },
+        {
+          id: "pfg",
+          label: "Porcelain Fused to Gold",
+          abbr: "PFG",
+          color: "bg-amber-600",
+        },
+        {
+          id: "gold_crown",
+          label: "Gold Crown",
+          abbr: "GC",
+          color: "bg-yellow-600",
+        },
+        {
+          id: "metal_crown",
+          label: "Metal Crown",
+          abbr: "MC",
+          color: "bg-slate-500",
+        },
+        {
+          id: "ss_crown",
+          label: "Stainless Steel Crown",
+          abbr: "SS",
+          color: "bg-slate-400",
+        },
+        { id: "pontic", label: "Pontic", abbr: "P", color: "bg-emerald-700" },
+        {
+          id: "rpd",
+          label: "Removable Partial Denture",
+          abbr: "RPD",
+          color: "bg-pink-500",
+        },
+        {
+          id: "cd",
+          label: "Complete Denture",
+          abbr: "CD",
+          color: "bg-pink-600",
+        },
+        {
+          id: "caries_free",
+          label: "Caries Free",
+          abbr: "✓",
+          color: "bg-emerald-500",
+        },
+      ],
+    },
+  ];
+
+  // Flattened for logic checks
+  const ALL_CONDITIONS = CONDITION_GROUPS.flatMap((g) => g.items);
+
   const stats = useMemo(() => {
-    const counts = {
-      caries: 0,
-      filled: 0,
-      extracted: 0,
-      healthy: 32,
-      notes: 0,
-    };
+    const counts = {};
+    ALL_CONDITIONS.forEach((c) => (counts[c.id] = 0));
+    counts.notes = 0;
     if (loading) return counts;
+
     items?.forEach((i) => {
-      if (i.status && i.status !== "healthy") {
-        counts[i.status] = (counts[i.status] || 0) + 1;
-        counts.healthy--;
+      if (i.status && counts[i.status] !== undefined) {
+        counts[i.status]++;
       }
       if (i.note) counts.notes++;
     });
     return counts;
   }, [items, loading]);
-
-  const renderToothRow = (numbers) => (
-    <div className="grid grid-cols-16 gap-3">
-      {numbers.map((num) =>
-        loading ? (
-          <div
-            key={num}
-            className="aspect-[2/3] bg-zinc-50 dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 rounded-lg animate-pulse"
-          />
-        ) : (
-          <ToothButton
-            key={num}
-            num={num}
-            items={items}
-            selected={selectedTooth === num}
-            onClick={() => {
-              const found = items?.find(
-                (x) => String(x.toothNumber) === String(num),
-              );
-              setSelectedTooth(num);
-              setToothDetails({ note: found?.note || "" });
-            }}
-          />
-        ),
-      )}
-    </div>
-  );
 
   const updateStatus = async (status) => {
     if (!selectedTooth) return;
@@ -499,120 +603,208 @@ function DentalChartSection({
   };
 
   return (
-    <div className="flex flex-col lg:grid lg:grid-cols-4 gap-8">
-      <div className="lg:col-span-3 bg-white dark:bg-zinc-900 border border-[#DCD1B4] dark:border-zinc-800 rounded-[2.5rem] p-10 shadow-inner overflow-x-auto">
-        <div className="min-w-[650px]">
-          <div className="text-[10px] font-black uppercase text-zinc-300 dark:text-zinc-600 tracking-widest text-center mb-8 italic">
-            Maxillary (Upper)
-          </div>
-          {renderToothRow(UPPER)}
-          <div className="h-px bg-gradient-to-r from-transparent via-[#E6D8BA] dark:via-zinc-800 to-transparent w-full my-4" />
-          {renderToothRow(LOWER)}
-          <div className="text-[10px] font-black uppercase text-zinc-300 dark:text-zinc-600 tracking-widest text-center mt-8 italic">
-            Mandibular (Lower)
+    <div className="flex flex-col lg:grid lg:grid-cols-12 gap-6">
+      {/* LEFT: MAIN CHART (Wider) */}
+      <div className="lg:col-span-8 bg-white dark:bg-zinc-900 border border-[#DCD1B4] dark:border-zinc-800 rounded-[1.5rem] lg:rounded-[2.5rem] p-4 lg:p-10 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto pb-4 custom-scrollbar">
+          <div className="min-w-[650px]">
+            <div className="text-[10px] font-black uppercase text-zinc-300 dark:text-zinc-600 tracking-widest text-center mb-8 italic">
+              Maxillary (Upper)
+            </div>
+            <div className="grid grid-cols-16 gap-3">
+              {UPPER.map((num) => (
+                <ToothButton
+                  key={num}
+                  num={num}
+                  items={items}
+                  selected={selectedTooth === num}
+                  onClick={() => {
+                    // 1. Find the existing data for this tooth
+                    const existingRecord = items?.find(
+                      (item) => String(item.toothNumber) === String(num),
+                    );
+
+                    // 2. Set the selected tooth ID
+                    setSelectedTooth(num);
+
+                    // 3. Populate the form with the existing note (or empty string if none)
+                    setToothDetails({
+                      note: existingRecord?.note || "",
+                    });
+                  }}
+                />
+              ))}
+            </div>
+            <div className="h-px bg-gradient-to-r from-transparent via-[#E6D8BA] dark:via-zinc-800 to-transparent w-full my-8" />
+            <div className="grid grid-cols-16 gap-3">
+              {LOWER.map((num) => (
+                <ToothButton
+                  key={num}
+                  num={num}
+                  items={items}
+                  selected={selectedTooth === num}
+                  onClick={() => {
+                    // 1. Find the existing data for this tooth
+                    const existingRecord = items?.find(
+                      (item) => String(item.toothNumber) === String(num),
+                    );
+
+                    // 2. Set the selected tooth ID
+                    setSelectedTooth(num);
+
+                    // 3. Populate the form with the existing note (or empty string if none)
+                    setToothDetails({
+                      note: existingRecord?.note || "",
+                    });
+                  }}
+                />
+              ))}
+            </div>
+            <div className="text-[10px] font-black uppercase text-zinc-300 dark:text-zinc-600 tracking-widest text-center mt-8 italic">
+              Mandibular (Lower)
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="space-y-6">
-        <div className="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-[#DCD1B4] dark:border-zinc-800 shadow-sm">
-          <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-4">
-            Live Summary
-          </h4>
-          <div
-            className={`space-y-2 ${loading ? "animate-pulse opacity-50" : ""}`}
-          >
-            <LegendItem
-              color="bg-emerald-500 dark:bg-zinc-800"
-              label="Healthy"
-              count={stats.healthy}
-            />
-            <LegendItem
-              color="bg-red-500"
-              label="Caries"
-              count={stats.caries}
-            />
-            <LegendItem
-              color="bg-yellow-500"
-              label="Filled"
-              count={stats.filled}
-            />
-            <LegendItem
-              color="bg-zinc-900 dark:bg-black"
-              label="Extracted"
-              count={stats.extracted}
-            />
-            <LegendItem
-              color="bg-cyan-600 dark:bg-black"
-              label="Missing"
-              count={stats.missing}
-            />
-            <div className="pt-2 mt-2 border-t border-dashed border-zinc-100 dark:border-zinc-800">
-              <LegendItem
-                color="bg-blue-500"
-                label="With Notes"
-                count={stats.notes}
-              />
+      {/* RIGHT: LEGEND & UPDATE PANEL */}
+      <div className="lg:col-span-4 space-y-6">
+        {/* VIEWABLE LEGEND GRID */}
+        <div className="bg-white dark:bg-zinc-900 p-5 lg:p-6 rounded-[1.5rem] lg:rounded-[2rem] border border-[#DCD1B4] dark:border-zinc-800">
+          <div className="overflow-x-auto pb-4 custom-scrollbar">
+            <h4 className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-4">
+              Live Summary
+            </h4>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-x-6 gap-y-4 max-h-[200px] lg:max-h-none overflow-y-auto">
+              {CONDITION_GROUPS.map((group) => (
+                <div key={group.name} className="space-y-3">
+                  <span className="text-[9px] font-black text-zinc-300 uppercase tracking-widest">
+                    {group.name}
+                  </span>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                    {group.items.map((c) => (
+                      <LegendItem
+                        key={c.id}
+                        color={c.color}
+                        label={c.label}
+                        abbr={c.abbr}
+                        count={stats[c.id]}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
+
+              <div className="pt-4 border-t border-dashed border-zinc-100 dark:border-zinc-800">
+                <LegendItem
+                  color="bg-blue-500"
+                  label="With Notes"
+                  count={stats.notes}
+                />
+              </div>
             </div>
           </div>
         </div>
 
+        {/* UPDATE PANEL */}
         <AnimatePresence mode="wait">
           {selectedTooth ? (
             <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 10 }}
-              className="bg-[#FFF8EA] dark:bg-zinc-900 p-6 rounded-[2rem] border border-[#DCD1B4] dark:border-zinc-800 shadow-lg"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-[#FFF8EA] dark:bg-zinc-900 p-6 rounded-[2rem] border-2 border-emerald-200 dark:border-emerald-900/30 shadow-xl"
             >
-              <h4 className="font-black text-lg mb-4 text-zinc-800 dark:text-zinc-100">
-                Update Tooth {selectedTooth}
-              </h4>
-              <div className="space-y-4">
+              <div className="flex justify-between items-center mb-4">
+                <h4 className="font-black text-lg text-zinc-800 dark:text-zinc-100">
+                  Tooth {selectedTooth}
+                </h4>
+                <button
+                  onClick={() => setSelectedTooth(null)}
+                  className="text-[10px] font-black uppercase text-zinc-400 hover:text-red-500"
+                >
+                  Cancel
+                </button>
+              </div>
+
+              {/* --- NEW: PREVIEW OF EXISTING NOTE --- */}
+              {items?.find(
+                (x) => String(x.toothNumber) === String(selectedTooth),
+              )?.note && (
+                <div className="mb-4 p-3 bg-white dark:bg-zinc-800 border-l-4 border-emerald-500 rounded-r-xl shadow-sm">
+                  <p className="text-[9px] font-black uppercase text-emerald-600 mb-1">
+                    Current Saved Note:
+                  </p>
+                  <p className="text-[11px] font-medium text-zinc-600 dark:text-zinc-300 italic">
+                    "
+                    {
+                      items.find(
+                        (x) => String(x.toothNumber) === String(selectedTooth),
+                      ).note
+                    }
+                    "
+                  </p>
+                </div>
+              )}
+
+              {/* --- INPUT WITH DEDICATED SAVE BUTTON --- */}
+              <div className="flex gap-2 mb-6">
                 <input
                   type="text"
-                  className="input w-full bg-white dark:bg-zinc-800 border-[#DCD1B4] dark:border-zinc-700 rounded-xl font-bold text-xs text-zinc-800 dark:text-zinc-100"
-                  placeholder="Findings..."
+                  className="input flex-1 bg-white dark:bg-zinc-800 border-[#DCD1B4] dark:border-zinc-700 rounded-xl font-bold text-xs"
+                  placeholder="Update findings..."
                   value={toothDetails.note}
                   onChange={(e) =>
                     setToothDetails({ ...toothDetails, note: e.target.value })
                   }
                 />
-                <div className="flex flex-wrap gap-2">
-                  <ActionButton
-                    color="bg-emerald-500"
-                    label="Healthy"
-                    onClick={() => updateStatus("healthy")}
-                  />
-                  <ActionButton
-                    color="bg-red-500"
-                    label="Caries"
-                    onClick={() => updateStatus("caries")}
-                  />
-                  <ActionButton
-                    color="bg-yellow-500"
-                    label="Filled"
-                    onClick={() => updateStatus("filled")}
-                  />
-                  <ActionButton
-                    color="bg-zinc-900 dark:bg-black"
-                    label="Extract"
-                    onClick={() => updateStatus("extracted")}
-                  />
-                  <ActionButton
-                    color="bg-cyan-600 dark:bg-black"
-                    label="Missing"
-                    onClick={() => updateStatus("missing")}
-                  />
-                </div>
+                <button
+                  onClick={() => {
+                    const existing = items?.find(
+                      (x) => String(x.toothNumber) === String(selectedTooth),
+                    );
+                    updateStatus(existing?.status || "healthy");
+                  }}
+                  className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 rounded-xl text-[10px] font-black uppercase transition-all"
+                >
+                  Save
+                </button>
+              </div>
+              {/* ---------------------------------------- */}
+
+              <div className="space-y-4">
+                {CONDITION_GROUPS.map((group) => (
+                  <div key={group.name}>
+                    <p className="text-[8px] font-black uppercase text-zinc-400 mb-2 ml-1">
+                      {group.name}
+                    </p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {group.items.map((c) => (
+                        <button
+                          key={c.id}
+                          onClick={() => updateStatus(c.id)}
+                          className={`${c.color} text-white p-2 rounded-xl hover:brightness-90 transition-all flex flex-col items-center justify-center min-h-[45px] shadow-sm`}
+                        >
+                          <span className="text-[10px] font-black">
+                            {c.abbr}
+                          </span>
+                          <span className="text-[7px] font-bold opacity-80 uppercase truncate w-full text-center">
+                            {c.label}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
             </motion.div>
           ) : (
-            <div className="p-10 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-[2rem] text-center">
-              <p className="text-[10px] font-black uppercase text-zinc-300 dark:text-zinc-700 leading-relaxed tracking-widest">
-                Select a tooth
-                <br />
-                to begin charting
+            <div className="p-12 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-[2rem] text-center bg-zinc-50/50 dark:bg-transparent">
+              <div className="w-12 h-12 bg-white dark:bg-zinc-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-zinc-100 dark:border-zinc-800 shadow-sm">
+                <span className="text-xl">🦷</span>
+              </div>
+              <p className="text-[10px] font-black uppercase text-zinc-300 dark:text-zinc-700 tracking-[0.2em] leading-relaxed">
+                Select a tooth from <br /> the chart to begin
               </p>
             </div>
           )}

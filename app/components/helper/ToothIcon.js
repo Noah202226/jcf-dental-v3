@@ -2,27 +2,43 @@
 import React from "react";
 import { motion } from "framer-motion";
 
-// A more realistic anatomical tooth shape
-const AnatomicalToothSVG = ({ fill, stroke }) => (
+// Enhanced Anatomical SVG with Cusps and Dual Roots
+const AnatomicalToothSVG = ({ fill, stroke, opacity = 1 }) => (
   <svg
     viewBox="0 0 100 120"
-    className="w-10 h-12 transition-colors duration-300"
+    className="w-10 h-12 transition-all duration-300"
+    style={{ opacity }}
   >
+    {/* Modern Molar Shape with Roots */}
     <path
-      d="M20 20 Q 20 5 50 5 Q 80 5 80 20 Q 85 50 75 90 Q 70 115 55 115 Q 50 110 45 115 Q 30 115 25 90 Q 15 50 20 20 Z"
+      d="M20 30 
+         Q 20 15 35 12 Q 50 15 65 12 Q 80 15 80 30 
+         Q 85 55 75 75 
+         Q 70 100 60 115 Q 50 105 40 115 
+         Q 30 100 25 75 
+         Q 15 55 20 30 Z"
       fill={fill}
       stroke={stroke}
       strokeWidth="4"
       strokeLinejoin="round"
     />
-    {/* Subtle highlight for depth */}
+    {/* Occlusal Surface Detail (Cusps) */}
     <path
-      d="M35 25 Q 40 15 50 15"
+      d="M30 35 Q 50 45 70 35"
+      fill="none"
+      stroke={stroke}
+      strokeWidth="2"
+      opacity="0.3"
+      strokeLinecap="round"
+    />
+    {/* Subtle Depth Highlight */}
+    <path
+      d="M30 22 Q 50 18 70 22"
       fill="none"
       stroke="white"
-      strokeWidth="2"
+      strokeWidth="3"
       strokeLinecap="round"
-      opacity="0.5"
+      opacity="0.6"
     />
   </svg>
 );
@@ -33,24 +49,58 @@ export default function ToothIcon({
   toothNumber,
   isSelected,
 }) {
-  // Theme-aware color mapping
+  // Full Mapping from the Clinical Legend Image
   const statusConfig = {
-    caries: { fill: "#FCA5A5", stroke: "#DC2626", label: "C" },
-    filled: { fill: "#FEF08A", stroke: "#EAB308", label: "F" },
-    extracted: { fill: "#3F3F46", stroke: "#18181B", label: "X" },
-    dentition: { fill: "#991B1B", stroke: "#7F1D1D", label: "P" },
-    healthy: { fill: "#FFFFFF", stroke: "#D4D4D8", label: "" },
-    missing: { fill: "cyan", stroke: "firebrick", label: "M" },
+    // RED = CARIES/DEFECT
+    caries: { fill: "#FCA5A5", stroke: "#EF4444", label: "C" },
+    recurrent_caries: { fill: "#FECACA", stroke: "#DC2626", label: "RC" },
+    fractured: { fill: "#FEE2E2", stroke: "#991B1B", label: "F" },
+    impacted: { fill: "#FFEDD5", stroke: "#F97316", label: "Imp" },
+    unerupted: { fill: "#FFF7ED", stroke: "#FB923C", label: "Un" },
+    abutment: { fill: "#FEE2E2", stroke: "#B91C1C", label: "Ab" },
+    extraction: {
+      fill: "#D4D4D8",
+      stroke: "#18181B",
+      label: "X",
+      isGhosted: true,
+    },
+
+    // BLUE = RESTORATIONS
+    amalgam: { fill: "#E0E7FF", stroke: "#4338CA", label: "Am" },
+    composite: { fill: "#DBEAFE", stroke: "#2563EB", label: "Co" },
+    glassionomer: { fill: "#CFFAFE", stroke: "#0891B2", label: "GI" },
+    sealant: { fill: "#CCFBF1", stroke: "#0D9488", label: "PFS" },
+    inlay: { fill: "#E0E7FF", stroke: "#6366F1", label: "In" },
+
+    // PROSTHODONTICS & OTHERS
+    apc: { fill: "#F5F3FF", stroke: "#7C3AED", label: "APC" },
+    pfc: { fill: "#FAE8FF", stroke: "#C026D3", label: "PFM" },
+    pfg: { fill: "#FEF3C7", stroke: "#D97706", label: "PFG" },
+    gold_crown: { fill: "#FEF3C7", stroke: "#B45309", label: "GC" },
+    metal_crown: { fill: "#F1F5F9", stroke: "#475569", label: "MC" },
+    ss_crown: { fill: "#F8FAFC", stroke: "#64748B", label: "SS" },
+    pontic: { fill: "#ECFDF5", stroke: "#059669", label: "P" },
+    rpd: { fill: "#FDF2F8", stroke: "#DB2777", label: "RPD" },
+    cd: { fill: "#FDF2F8", stroke: "#BE185D", label: "CD" },
+    missing: {
+      fill: "#F4F4F5",
+      stroke: "#A1A1AA",
+      label: "M",
+      isGhosted: true,
+    },
+
+    // CARIES FREE
+    healthy: { fill: "#FFFFFF", stroke: "#E4E4E7", label: "✓" },
   };
 
   const current = statusConfig[status] || statusConfig.healthy;
 
   return (
     <div className="relative group flex flex-col items-center">
-      {/* Tooth Numbering Label (Top) */}
+      {/* Tooth Numbering */}
       <span
-        className={`text-[10px] font-black mb-1 transition-colors ${
-          isSelected ? "text-indigo-600 scale-110" : "text-zinc-400"
+        className={`text-[9px] font-black mb-1 transition-colors ${
+          isSelected ? "text-emerald-600 scale-110" : "text-zinc-400"
         }`}
       >
         {toothNumber}
@@ -63,38 +113,53 @@ export default function ToothIcon({
           relative p-2 rounded-2xl transition-all duration-300
           ${
             isSelected
-              ? "bg-indigo-50 ring-2 ring-indigo-500 shadow-lg shadow-indigo-100"
-              : "bg-white/50 border border-transparent hover:border-zinc-200"
+              ? "bg-emerald-50 dark:bg-emerald-950/20 ring-2 ring-emerald-500 shadow-lg"
+              : "bg-white dark:bg-zinc-900 border border-transparent hover:border-zinc-200 dark:hover:border-zinc-800"
           }
         `}
       >
-        <AnatomicalToothSVG fill={current.fill} stroke={current.stroke} />
+        <AnatomicalToothSVG
+          fill={current.fill}
+          stroke={current.stroke}
+          opacity={current.isGhosted ? 0.3 : 1}
+        />
 
         {/* Status Badge Overlay */}
-        {status !== "healthy" && (
+        {(status !== "healthy" || current.label === "✓") && (
           <div
-            className="absolute top-1 right-1 w-4 h-4 rounded-full flex items-center justify-center border border-white shadow-sm"
-            style={{ backgroundColor: current.stroke }}
+            className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center border-2 border-white dark:border-zinc-900 shadow-sm z-20"
+            style={{
+              backgroundColor:
+                status === "healthy" ? "#10B981" : current.stroke,
+            }}
           >
-            <span className="text-[8px] font-black text-white leading-none">
+            <span className="text-[7px] font-black text-white leading-none uppercase">
               {current.label}
             </span>
           </div>
         )}
 
-        {/* Note Indicator (Glow effect) */}
+        {/* Note Indicator */}
         {hasNote && (
-          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex flex-col items-center">
-            <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]" />
+          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2">
+            <div className="w-2 h-2 rounded-full bg-blue-500 border-2 border-white dark:border-zinc-900 shadow-[0_0_8px_rgba(59,130,246,0.6)]" />
+          </div>
+        )}
+
+        {/* Ghosting Overlay for Missing/Extraction */}
+        {current.isGhosted && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="w-full h-[2px] bg-red-500/30 rotate-45 absolute" />
+            <div className="w-full h-[2px] bg-red-500/30 -rotate-45 absolute" />
           </div>
         )}
       </motion.div>
 
-      {/* Selection Glow (Underneath) */}
+      {/* Selection Glow */}
       {isSelected && (
         <motion.div
           layoutId="selectionGlow"
-          className="absolute inset-0 bg-indigo-500/5 blur-xl -z-10 rounded-full"
+          className="absolute inset-0 bg-emerald-500/10 blur-xl -z-10 rounded-full"
         />
       )}
     </div>
