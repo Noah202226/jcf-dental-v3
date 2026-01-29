@@ -1,8 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FiUserPlus, FiSearch, FiEye, FiTrash2 } from "react-icons/fi";
-import { notify } from "@/app/lib/notify"; // Unified sound + toast
+import {
+  FiUserPlus,
+  FiSearch,
+  FiEye,
+  FiEyeOff,
+  FiTrash2,
+  FiLock,
+} from "react-icons/fi";
+import { notify } from "@/app/lib/notify";
 import AddPatientModal from "../helper/AddPatientModal";
 import ViewPatientDetailsModal from "../helper/ViewPatientDetailsModal";
 import { usePatientStore } from "@/app/stores/usePatientStore";
@@ -16,6 +23,11 @@ export default function PatientsSection() {
     isOpen: false,
     patient: null,
   });
+
+  // States for delete authorization
+  const [deletePassword, setDeletePassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false); // New state for visibility toggle
+  const REQUIRED_PASSWORD = "ServeWithLove_1Cor1313";
 
   const { patients, fetchPatients, addPatient, deletePatient } =
     usePatientStore();
@@ -39,14 +51,23 @@ export default function PatientsSection() {
 
   const handleDeleteConfirm = (patient) => {
     setConfirmModal({ isOpen: true, patient });
+    setDeletePassword("");
+    setShowPassword(false); // Ensure it's hidden when opening
   };
 
   const handleDelete = async () => {
+    if (deletePassword !== REQUIRED_PASSWORD) {
+      notify.error("Invalid authorization password.");
+      return;
+    }
+
     try {
       setDeleteLoading(true);
       await deletePatient(confirmModal.patient.$id);
-      notify.success("Patient record purged successfully."); // Trigger Sound + Toast
+      notify.success("Patient record purged successfully.");
       setConfirmModal({ isOpen: false, patient: null });
+      setDeletePassword("");
+      setShowPassword(false);
       fetchPatients();
     } catch (error) {
       notify.error("Failed to delete record.");
@@ -59,7 +80,7 @@ export default function PatientsSection() {
     try {
       setLoading(true);
       await addPatient(newData);
-      notify.success("New patient registered."); // Trigger Sound + Toast
+      notify.success("New patient registered.");
       setIsOpen(false);
       fetchPatients();
     } catch (err) {
@@ -150,7 +171,7 @@ export default function PatientsSection() {
           </div>
         </div>
 
-        {/* Desktop View: Table (Hidden on Mobile) */}
+        {/* Desktop View: Table */}
         <div className="hidden lg:block overflow-x-auto">
           <table className="w-full text-left">
             <thead>
@@ -211,7 +232,7 @@ export default function PatientsSection() {
           </table>
         </div>
 
-        {/* Mobile View: List (Visible on Mobile Only) */}
+        {/* Mobile View: List */}
         <div className="lg:hidden divide-y divide-zinc-100 dark:divide-zinc-900">
           {filteredPatients.length > 0 ? (
             [...filteredPatients]
@@ -290,20 +311,49 @@ export default function PatientsSection() {
               </span>
               . This action cannot be undone.
             </p>
+
+            {/* Password Input Field with Show/Hide Toggle */}
+            <div className="mt-2 mb-6 space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">
+                Authorization Required
+              </label>
+              <div className="relative">
+                <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" />
+                <input
+                  name="action-confirmation"
+                  autoComplete="new-password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter delete password"
+                  className="w-full pl-12 pr-12 py-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl focus:ring-4 focus:ring-red-500/10 focus:border-red-500 outline-none transition-all font-bold text-sm"
+                  value={deletePassword}
+                  onChange={(e) => setDeletePassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors p-1"
+                >
+                  {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+                </button>
+              </div>
+            </div>
+
             <div className="flex gap-4 mt-6">
               <button
                 className="flex-1 py-4 font-black uppercase text-xs tracking-widest text-zinc-400 hover:text-zinc-900 transition-colors"
-                onClick={() =>
-                  setConfirmModal({ isOpen: false, patient: null })
-                }
+                onClick={() => {
+                  setConfirmModal({ isOpen: false, patient: null });
+                  setDeletePassword("");
+                  setShowPassword(false);
+                }}
                 disabled={deleteLoading}
               >
                 Cancel
               </button>
               <button
-                className="flex-[2] bg-red-500 hover:bg-red-600 text-white font-black py-4 rounded-2xl shadow-xl shadow-red-500/20 transition-all uppercase text-xs tracking-widest"
+                className="flex-[2] bg-red-500 hover:bg-red-600 text-white font-black py-4 rounded-2xl shadow-xl shadow-red-500/20 transition-all uppercase text-xs tracking-widest disabled:opacity-50 disabled:grayscale"
                 onClick={handleDelete}
-                disabled={deleteLoading}
+                disabled={deleteLoading || deletePassword !== REQUIRED_PASSWORD}
               >
                 {deleteLoading ? (
                   <span className="loading loading-spinner loading-xs"></span>

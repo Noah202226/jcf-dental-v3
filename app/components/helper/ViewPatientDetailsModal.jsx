@@ -131,7 +131,7 @@ export default function ViewPatientDetailsModal({ patient, isOpen, onClose }) {
   return (
     <>
       <div className="fixed inset-0 z-[60] flex items-center justify-center p-0 sm:p-4 bg-zinc-950/40 backdrop-blur-md animate-in fade-in duration-300">
-        <div className="bg-white dark:bg-zinc-950 w-full h-full sm:h-screen sm:max-w-9xl sm:rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col border border-white/20 dark:border-zinc-800">
+        <div className="bg-white dark:bg-zinc-950 w-full h-full sm:h-fit sm:max-w-9xl sm:rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col border border-white/20 dark:border-zinc-800">
           {/* Header Area */}
           <div className="p-6 sm:p-8 bg-zinc-50/50 dark:bg-zinc-900/50 border-b border-zinc-100 dark:border-zinc-900 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div className="flex items-center gap-4">

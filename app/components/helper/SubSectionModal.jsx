@@ -355,7 +355,7 @@ export default function SubSectionModal({
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        className="modal-box w-full max-w-7xl max-h-[95vh] lg:max-h-[90vh] bg-[#FBFBFB] dark:bg-zinc-950 rounded-[2rem] lg:rounded-[2.5rem] p-0 overflow-hidden border border-[#DCD1B4] dark:border-zinc-800 shadow-2xl flex flex-col"
+        className="modal-box w-full max-w-[95vw] xl:max-w-[95vw] max-h-[95vh] lg:max-h-[95vh] bg-[#FBFBFB] dark:bg-zinc-950 rounded-[2rem] lg:rounded-[2.5rem] p-0 overflow-hidden border border-[#DCD1B4] dark:border-zinc-800 shadow-2xl flex flex-col"
       >
         <div className="p-4 lg:p-8 border-b border-[#E6D8BA] dark:border-zinc-800 bg-white dark:bg-zinc-900 flex justify-between items-center shrink-0 sticky top-0 z-50">
           <div>
@@ -374,7 +374,7 @@ export default function SubSectionModal({
           </button>
         </div>
 
-        <div className="p-4 lg:p-8 overflow-y-auto custom-scrollbar flex-1 pb-32 sm:pb-8">
+        <div className="p-4 lg:p-8 overflow-y-auto custom-scrollbar flex-1 pb-32 sm:pb-8 ">
           {collectionId === "dentalchart" ? (
             <DentalChartSection
               items={items}
@@ -386,7 +386,7 @@ export default function SubSectionModal({
               loading={loading}
             />
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-10">
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-10 bg-black">
               <div className="lg:col-span-3">
                 <h4 className="text-[10px] font-black uppercase text-zinc-400 dark:text-zinc-600 mb-4 tracking-widest">
                   Historical Records
@@ -603,11 +603,11 @@ function DentalChartSection({
   };
 
   return (
-    <div className="flex flex-col lg:grid lg:grid-cols-12 gap-6">
+    <div className="flex flex-col lg:grid lg:grid-cols-12 gap-6 ">
       {/* LEFT: MAIN CHART (Wider) */}
-      <div className="lg:col-span-8 bg-white dark:bg-zinc-900 border border-[#DCD1B4] dark:border-zinc-800 rounded-[1.5rem] lg:rounded-[2.5rem] p-4 lg:p-10 shadow-sm overflow-hidden">
+      <div className="w-full lg:col-span-8 bg-white dark:bg-zinc-900 border border-[#DCD1B4] dark:border-zinc-800 rounded-[1.5rem] lg:rounded-[2.5rem] p-4 lg:p-10 shadow-sm overflow-hidden">
         <div className="overflow-x-auto pb-4 custom-scrollbar">
-          <div className="min-w-[650px]">
+          <div className="w-max-full">
             <div className="text-[10px] font-black uppercase text-zinc-300 dark:text-zinc-600 tracking-widest text-center mb-8 italic">
               Maxillary (Upper)
             </div>
@@ -664,6 +664,110 @@ function DentalChartSection({
               Mandibular (Lower)
             </div>
           </div>
+
+          {/* UPDATE PANEL */}
+          <AnimatePresence mode="wait">
+            {selectedTooth ? (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-[#FFF8EA] dark:bg-zinc-900 p-6 rounded-[2rem] border-2 border-emerald-200 dark:border-emerald-900/30 shadow-xl"
+              >
+                <div className="flex justify-between items-center mb-4">
+                  <h4 className="font-black text-lg text-zinc-800 dark:text-zinc-100">
+                    Tooth {selectedTooth}
+                  </h4>
+                  <button
+                    onClick={() => setSelectedTooth(null)}
+                    className="text-[10px] font-black uppercase text-zinc-400 hover:text-red-500"
+                  >
+                    Cancel
+                  </button>
+                </div>
+
+                {/* --- NEW: PREVIEW OF EXISTING NOTE --- */}
+                {items?.find(
+                  (x) => String(x.toothNumber) === String(selectedTooth),
+                )?.note && (
+                  <div className="mb-4 p-3 bg-white dark:bg-zinc-800 border-l-4 border-emerald-500 rounded-r-xl shadow-sm">
+                    <p className="text-[9px] font-black uppercase text-emerald-600 mb-1">
+                      Current Saved Note:
+                    </p>
+                    <p className="text-[11px] font-medium text-zinc-600 dark:text-zinc-300 italic">
+                      "
+                      {
+                        items.find(
+                          (x) =>
+                            String(x.toothNumber) === String(selectedTooth),
+                        ).note
+                      }
+                      "
+                    </p>
+                  </div>
+                )}
+
+                {/* --- INPUT WITH DEDICATED SAVE BUTTON --- */}
+                <div className="flex gap-2 mb-6">
+                  <input
+                    type="text"
+                    className="input flex-1 bg-white dark:bg-zinc-800 border-[#DCD1B4] dark:border-zinc-700 rounded-xl font-bold text-xs"
+                    placeholder="Update findings..."
+                    value={toothDetails.note}
+                    onChange={(e) =>
+                      setToothDetails({ ...toothDetails, note: e.target.value })
+                    }
+                  />
+                  <button
+                    onClick={() => {
+                      const existing = items?.find(
+                        (x) => String(x.toothNumber) === String(selectedTooth),
+                      );
+                      updateStatus(existing?.status || "healthy");
+                    }}
+                    className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 rounded-xl text-[10px] font-black uppercase transition-all"
+                  >
+                    Save
+                  </button>
+                </div>
+                {/* ---------------------------------------- */}
+
+                <div className="space-y-4">
+                  {CONDITION_GROUPS.map((group) => (
+                    <div key={group.name}>
+                      <p className="text-[8px] font-black uppercase text-zinc-400 mb-2 ml-1">
+                        {group.name}
+                      </p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {group.items.map((c) => (
+                          <button
+                            key={c.id}
+                            onClick={() => updateStatus(c.id)}
+                            className={`${c.color} text-white p-2 rounded-xl hover:brightness-90 transition-all flex flex-col items-center justify-center min-h-[45px] shadow-sm`}
+                          >
+                            <span className="text-[10px] font-black">
+                              {c.abbr}
+                            </span>
+                            <span className="text-[7px] font-bold opacity-80 uppercase truncate w-full text-center">
+                              {c.label}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            ) : (
+              <div className="p-12 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-[2rem] text-center bg-zinc-50/50 dark:bg-transparent">
+                <div className="w-12 h-12 bg-white dark:bg-zinc-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-zinc-100 dark:border-zinc-800 shadow-sm">
+                  <span className="text-xl">🦷</span>
+                </div>
+                <p className="text-[10px] font-black uppercase text-zinc-300 dark:text-zinc-700 tracking-[0.2em] leading-relaxed">
+                  Select a tooth from <br /> the chart to begin
+                </p>
+              </div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
@@ -706,109 +810,6 @@ function DentalChartSection({
             </div>
           </div>
         </div>
-
-        {/* UPDATE PANEL */}
-        <AnimatePresence mode="wait">
-          {selectedTooth ? (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="bg-[#FFF8EA] dark:bg-zinc-900 p-6 rounded-[2rem] border-2 border-emerald-200 dark:border-emerald-900/30 shadow-xl"
-            >
-              <div className="flex justify-between items-center mb-4">
-                <h4 className="font-black text-lg text-zinc-800 dark:text-zinc-100">
-                  Tooth {selectedTooth}
-                </h4>
-                <button
-                  onClick={() => setSelectedTooth(null)}
-                  className="text-[10px] font-black uppercase text-zinc-400 hover:text-red-500"
-                >
-                  Cancel
-                </button>
-              </div>
-
-              {/* --- NEW: PREVIEW OF EXISTING NOTE --- */}
-              {items?.find(
-                (x) => String(x.toothNumber) === String(selectedTooth),
-              )?.note && (
-                <div className="mb-4 p-3 bg-white dark:bg-zinc-800 border-l-4 border-emerald-500 rounded-r-xl shadow-sm">
-                  <p className="text-[9px] font-black uppercase text-emerald-600 mb-1">
-                    Current Saved Note:
-                  </p>
-                  <p className="text-[11px] font-medium text-zinc-600 dark:text-zinc-300 italic">
-                    "
-                    {
-                      items.find(
-                        (x) => String(x.toothNumber) === String(selectedTooth),
-                      ).note
-                    }
-                    "
-                  </p>
-                </div>
-              )}
-
-              {/* --- INPUT WITH DEDICATED SAVE BUTTON --- */}
-              <div className="flex gap-2 mb-6">
-                <input
-                  type="text"
-                  className="input flex-1 bg-white dark:bg-zinc-800 border-[#DCD1B4] dark:border-zinc-700 rounded-xl font-bold text-xs"
-                  placeholder="Update findings..."
-                  value={toothDetails.note}
-                  onChange={(e) =>
-                    setToothDetails({ ...toothDetails, note: e.target.value })
-                  }
-                />
-                <button
-                  onClick={() => {
-                    const existing = items?.find(
-                      (x) => String(x.toothNumber) === String(selectedTooth),
-                    );
-                    updateStatus(existing?.status || "healthy");
-                  }}
-                  className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 rounded-xl text-[10px] font-black uppercase transition-all"
-                >
-                  Save
-                </button>
-              </div>
-              {/* ---------------------------------------- */}
-
-              <div className="space-y-4">
-                {CONDITION_GROUPS.map((group) => (
-                  <div key={group.name}>
-                    <p className="text-[8px] font-black uppercase text-zinc-400 mb-2 ml-1">
-                      {group.name}
-                    </p>
-                    <div className="grid grid-cols-3 gap-2">
-                      {group.items.map((c) => (
-                        <button
-                          key={c.id}
-                          onClick={() => updateStatus(c.id)}
-                          className={`${c.color} text-white p-2 rounded-xl hover:brightness-90 transition-all flex flex-col items-center justify-center min-h-[45px] shadow-sm`}
-                        >
-                          <span className="text-[10px] font-black">
-                            {c.abbr}
-                          </span>
-                          <span className="text-[7px] font-bold opacity-80 uppercase truncate w-full text-center">
-                            {c.label}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          ) : (
-            <div className="p-12 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-[2rem] text-center bg-zinc-50/50 dark:bg-transparent">
-              <div className="w-12 h-12 bg-white dark:bg-zinc-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-zinc-100 dark:border-zinc-800 shadow-sm">
-                <span className="text-xl">🦷</span>
-              </div>
-              <p className="text-[10px] font-black uppercase text-zinc-300 dark:text-zinc-700 tracking-[0.2em] leading-relaxed">
-                Select a tooth from <br /> the chart to begin
-              </p>
-            </div>
-          )}
-        </AnimatePresence>
       </div>
     </div>
   );
