@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { notify } from "@/app/lib/notify";
 import { FiLoader, FiUser } from "react-icons/fi";
+import { databases } from "@/app/lib/appwrite";
+import { Query } from "appwrite";
 
 export default function AddPatientModal({
   isOpen,
@@ -23,15 +25,37 @@ export default function AddPatientModal({
     note: "",
   });
 
+  const generateNextPatientNo = async () => {
+    try {
+      // 1. Fetch the single document with the highest patientNo
+      const response = await databases.listDocuments(
+        process.env.NEXT_PUBLIC_DATABASE_ID,
+        "patients",
+        [Query.orderDesc("patientNo"), Query.limit(1)],
+      );
+
+      // 2. If records exist, increment the highest; otherwise, start at 1
+      const lastNo =
+        response.documents.length > 0 ? response.documents[0].patientNo : 0;
+
+      return lastNo + 1;
+    } catch (err) {
+      console.error("Error generating patient number:", err);
+      return 1; // Fallback
+    }
+  };
+
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.patientName) {
       return notify.error("Patient identity is required.");
     }
-    onSave(form);
+    const nextNo = await generateNextPatientNo();
+    const patientData = { ...form, patientNo: nextNo };
+    onSave(patientData);
   };
 
   useEffect(() => {

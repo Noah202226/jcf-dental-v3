@@ -119,8 +119,10 @@ export default function ViewPatientDetailsModal({ patient, isOpen, onClose }) {
   };
 
   function calculateAge(birthdate) {
-    if (!birthdate) return null;
+    if (!birthdate || birthdate === "") return null; // Added check for empty string
     const birth = new Date(birthdate);
+    if (isNaN(birth.getTime())) return null; // Added check for invalid dates
+
     const today = new Date();
     let age = today.getFullYear() - birth.getFullYear();
     const m = today.getMonth() - birth.getMonth();
@@ -128,6 +130,11 @@ export default function ViewPatientDetailsModal({ patient, isOpen, onClose }) {
     return age;
   }
 
+  // This converts "1" to "00001"
+  const formattedPatientNo = String(updatedPatient.patientNo || 0).padStart(
+    5,
+    "0",
+  );
   return (
     <>
       <div className="fixed inset-0 z-[60] flex items-center justify-center p-0 sm:p-4 bg-zinc-950/40 backdrop-blur-md animate-in fade-in duration-300">
@@ -139,6 +146,11 @@ export default function ViewPatientDetailsModal({ patient, isOpen, onClose }) {
                 <FiUser size={24} />
               </div>
               <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="px-2 py-0.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-[9px] font-black rounded-md tracking-widest uppercase">
+                    Patient #{formattedPatientNo}
+                  </span>
+                </div>
                 <h2 className="text-2xl font-black text-zinc-900 dark:text-zinc-100 uppercase tracking-tight leading-none">
                   {updatedPatient.patientName}
                 </h2>
@@ -148,6 +160,20 @@ export default function ViewPatientDetailsModal({ patient, isOpen, onClose }) {
                   </span>
                   <span className="text-sm font-black text-red-500">
                     ₱{summary.totalRemaining.toLocaleString()}
+                  </span>
+                </div>
+
+                {/* Add a separator dot */}
+                <span className="text-zinc-300 dark:text-zinc-800">•</span>
+
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
+                    Age:
+                  </span>
+                  <span className="text-sm font-black text-zinc-900 dark:text-zinc-100">
+                    {calculateAge(updatedPatient.birthdate)
+                      ? `${calculateAge(updatedPatient.birthdate)} yrs`
+                      : "N/A"}
                   </span>
                 </div>
               </div>
@@ -220,6 +246,12 @@ export default function ViewPatientDetailsModal({ patient, isOpen, onClose }) {
                 onChange={setUpdatedPatient}
                 icon={<FiCalendar />}
               />
+              {/* Display Age badge overlay when not in edit mode */}
+              {!editMode && updatedPatient.birthdate && (
+                <span className="absolute top-0 right-0 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded-md text-[9px] font-black text-emerald-600 uppercase tracking-tighter">
+                  {calculateAge(updatedPatient.birthdate)} Years Old
+                </span>
+              )}
               <EditableField
                 label="Occupation"
                 name="occupation"

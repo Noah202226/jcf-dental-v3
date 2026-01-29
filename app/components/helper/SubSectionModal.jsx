@@ -386,7 +386,7 @@ export default function SubSectionModal({
               loading={loading}
             />
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-10 bg-black">
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-10">
               <div className="lg:col-span-3">
                 <h4 className="text-[10px] font-black uppercase text-zinc-400 dark:text-zinc-600 mb-4 tracking-widest">
                   Historical Records
