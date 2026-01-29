@@ -40,6 +40,7 @@ export default function ToothIcon({
     extracted: { fill: "#3F3F46", stroke: "#18181B", label: "X" },
     dentition: { fill: "#991B1B", stroke: "#7F1D1D", label: "P" },
     healthy: { fill: "#FFFFFF", stroke: "#D4D4D8", label: "" },
+    missing: { fill: "cyan", stroke: "firebrick", label: "M" },
   };
 
   const current = statusConfig[status] || statusConfig.healthy;

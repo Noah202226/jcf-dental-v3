@@ -523,7 +523,7 @@ function DentalChartSection({
             className={`space-y-2 ${loading ? "animate-pulse opacity-50" : ""}`}
           >
             <LegendItem
-              color="bg-zinc-100 dark:bg-zinc-800"
+              color="bg-emerald-500 dark:bg-zinc-800"
               label="Healthy"
               count={stats.healthy}
             />
@@ -541,6 +541,11 @@ function DentalChartSection({
               color="bg-zinc-900 dark:bg-black"
               label="Extracted"
               count={stats.extracted}
+            />
+            <LegendItem
+              color="bg-cyan-600 dark:bg-black"
+              label="Missing"
+              count={stats.missing}
             />
             <div className="pt-2 mt-2 border-t border-dashed border-zinc-100 dark:border-zinc-800">
               <LegendItem
@@ -593,6 +598,11 @@ function DentalChartSection({
                     color="bg-zinc-900 dark:bg-black"
                     label="Extract"
                     onClick={() => updateStatus("extracted")}
+                  />
+                  <ActionButton
+                    color="bg-cyan-600 dark:bg-black"
+                    label="Missing"
+                    onClick={() => updateStatus("missing")}
                   />
                 </div>
               </div>
