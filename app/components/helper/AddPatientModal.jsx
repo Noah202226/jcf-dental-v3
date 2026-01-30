@@ -260,7 +260,7 @@ export default function AddPatientModal({
               name="patient_tabs"
               role="tab"
               className="tab font-black uppercase text-[10px] tracking-widest [--tab-accent-color:#10b981] !text-zinc-900 dark:!text-zinc-100 border-zinc-200 dark:border-zinc-800"
-              aria-label="Clinical Notes"
+              aria-label="Your Patient Notes / Additional Information"
             />
             <div
               role="tabpanel"

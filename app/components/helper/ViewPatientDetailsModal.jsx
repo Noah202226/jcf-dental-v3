@@ -313,14 +313,14 @@ export default function ViewPatientDetailsModal({ patient, isOpen, onClose }) {
                     }
                   />
                   <SectionCard
-                    title="Clinical Notes"
+                    title="Progress Notes"
                     description="Detailed session summaries and observation logs."
                     icon={<FiEdit3 size={20} />}
                     colorClass="text-amber-500"
                     count={notes.items.length}
                     onClick={() =>
                       setActiveSection({
-                        title: "Dental Notes",
+                        title: "Progress Notes",
                         collectionId: "notes",
                       })
                     }
