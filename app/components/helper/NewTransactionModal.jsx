@@ -18,6 +18,7 @@ export default function NewTransactionModal({ patient, onClose, onSaved }) {
     totalAmount: "",
     paymentType: "",
     initialPay: "",
+    procedure: "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -81,6 +82,7 @@ export default function NewTransactionModal({ patient, onClose, onSaved }) {
           paid: paidAmount,
           status: statusValue,
           remaining: remainingBalance,
+          procedure: form.procedure,
         },
       );
 
@@ -190,6 +192,20 @@ export default function NewTransactionModal({ patient, onClose, onSaved }) {
                 ₱{Number(form.servicePrice).toLocaleString()}
               </span>
             </div>
+          </div>
+
+          {/* NEW: Procedure Field */}
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">
+              Clinical Procedure / Details
+            </label>
+            <textarea
+              name="procedure"
+              value={form.procedure}
+              onChange={handleChange}
+              placeholder="Describe the treatment steps (e.g., Tooth Extraction on #14...)"
+              className="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl px-4 py-4 text-sm font-bold focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all outline-none min-h-[100px] resize-none"
+            />
           </div>
 
           {/* Installment Logic */}

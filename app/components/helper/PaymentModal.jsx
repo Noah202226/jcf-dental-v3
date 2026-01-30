@@ -185,11 +185,12 @@ export default function PaymentModal({ isOpen, onClose, patient }) {
             transactions.map((t) => (
               <div
                 key={t.$id}
-                className="group relative bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-100 dark:border-zinc-800 p-5 rounded-2xl transition-all hover:border-emerald-500/30"
+                className="group relative bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-100 dark:border-zinc-800 p-5 rounded-[2rem] transition-all hover:border-emerald-500/30 hover:shadow-lg hover:shadow-emerald-500/5"
               >
                 <div className="flex justify-between items-start">
                   <div className="space-y-1">
-                    <h3 className="font-black text-zinc-900 dark:text-zinc-100 uppercase tracking-tight text-sm">
+                    <h3 className="font-black text-zinc-900 dark:text-zinc-100 uppercase tracking-tight text-sm flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                       {t.serviceName || "Clinical Service"}
                     </h3>
                     <div className="flex items-center gap-3 text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
@@ -200,7 +201,11 @@ export default function PaymentModal({ isOpen, onClose, patient }) {
                         )}
                       </span>
                       <span
-                        className={`px-2 py-0.5 rounded-md ${t.paymentType === "installment" ? "bg-amber-500/10 text-amber-600" : "bg-emerald-500/10 text-emerald-600"}`}
+                        className={`px-2 py-0.5 rounded-md ${
+                          t.paymentType === "installment"
+                            ? "bg-amber-500/10 text-amber-600"
+                            : "bg-emerald-500/10 text-emerald-600"
+                        }`}
                       >
                         {t.paymentType}
                       </span>
@@ -208,28 +213,46 @@ export default function PaymentModal({ isOpen, onClose, patient }) {
                   </div>
 
                   <div className="text-right">
-                    <p className="text-lg font-black text-emerald-600">
+                    <p className="text-lg font-black text-emerald-600 leading-none">
                       ₱{Number(t.paid || 0).toLocaleString()}
                     </p>
                     {t.remaining > 0 ? (
-                      <p className="text-[10px] font-bold text-red-500 uppercase tracking-widest">
+                      <p className="text-[10px] font-bold text-red-500 uppercase tracking-widest mt-1">
                         Balance: ₱{Number(t.remaining).toLocaleString()}
                       </p>
                     ) : (
-                      <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest flex items-center justify-end gap-1">
+                      <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest flex items-center justify-end gap-1 mt-1">
                         <FiCheckCircle /> Fully Settled
                       </p>
                     )}
                   </div>
                 </div>
 
+                {/* PROCEDURE SECTION - Stylized */}
+                <div className="mt-4 p-4 bg-white/50 dark:bg-zinc-950/50 rounded-2xl border border-zinc-100/50 dark:border-zinc-800/50">
+                  <p className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
+                    <span className="w-4 h-[1px] bg-zinc-300 dark:bg-zinc-800"></span>
+                    Procedure Details
+                  </p>
+                  <p className="text-xs font-medium text-zinc-600 dark:text-zinc-400 leading-relaxed italic">
+                    {t.procedure ? (
+                      t.procedure
+                    ) : (
+                      <span className="opacity-50">
+                        No clinical procedure recorded for this visit.
+                      </span>
+                    )}
+                  </p>
+                </div>
+
                 <div className="mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800/50 flex justify-between items-center">
                   {t.paymentType === "installment" ? (
                     <button
                       onClick={() => setSelectedInstallment(t)}
-                      className="text-[10px] font-black uppercase tracking-widest text-emerald-500 hover:text-emerald-600 flex items-center gap-2"
+                      className="text-[10px] font-black uppercase tracking-widest text-emerald-500 hover:text-emerald-600 flex items-center gap-2 group/btn"
                     >
-                      Manage Installments <FiArrowRight />
+                      Manage Installments
+                      <FiArrowRight className="transition-transform group-hover/btn:translate-x-1" />
                     </button>
                   ) : (
                     <div />
