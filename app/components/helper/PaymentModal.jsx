@@ -21,8 +21,25 @@ const DATABASE_ID = process.env.NEXT_PUBLIC_DATABASE_ID;
 const COLLECTION_TRANSACTIONS = "transactions";
 
 // Modernized Confirmation Dialog
-const ConfirmationDialog = ({ transaction, onConfirm, onCancel }) => {
+const ConfirmationDialog = ({
+  transaction,
+  onConfirm,
+  onCancel,
+  requiredPassword = "ServeWithLove_1Cor1313", // Default password, or pass it as a prop
+}) => {
+  const [inputPassword, setInputPassword] = useState("");
+
+  // Reset the input field every time the modal opens (transaction changes)
+  useEffect(() => {
+    if (transaction) {
+      setInputPassword("");
+    }
+  }, [transaction]);
+
   if (!transaction) return null;
+
+  const isMatch = inputPassword === requiredPassword;
+
   return (
     <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-zinc-950/60 backdrop-blur-md p-4 animate-in fade-in duration-200">
       <div className="bg-white dark:bg-zinc-950 rounded-[2rem] border border-red-500/20 shadow-2xl p-8 w-full max-w-sm">
@@ -36,16 +53,41 @@ const ConfirmationDialog = ({ transaction, onConfirm, onCancel }) => {
           </span>
           . This action is permanent.
         </p>
+
+        {/* --- PASSWORD INPUT FIELD --- */}
+        <div className="mb-4 space-y-2">
+          <label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
+            Security Password
+          </label>
+          <input
+            name="action-confirmation"
+            autoComplete="new-password"
+            type="password"
+            value={inputPassword}
+            onChange={(e) => setInputPassword(e.target.value)}
+            placeholder="Enter password to confirm"
+            className="w-full bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200 text-sm font-bold rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500/50 transition-all placeholder:font-normal"
+            autoFocus
+          />
+        </div>
+
         <div className="flex flex-col gap-2">
           <button
             onClick={onConfirm}
-            className="w-full py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-black uppercase text-[10px] tracking-widest transition-all active:scale-95"
+            disabled={!isMatch}
+            className={`w-full py-3 text-white rounded-xl font-black uppercase text-[10px] tracking-widest transition-all active:scale-95
+              ${
+                isMatch
+                  ? "bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/20 cursor-pointer"
+                  : "bg-zinc-300 dark:bg-zinc-800 text-zinc-500 opacity-50 cursor-not-allowed"
+              }`}
           >
-            Confirm Deletion
+            {isMatch ? "Confirm Deletion" : "Locked"}
           </button>
+
           <button
             onClick={onCancel}
-            className="w-full py-3 bg-zinc-100 dark:bg-zinc-900 text-zinc-500 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all"
+            className="w-full py-3 bg-zinc-50 dark:bg-zinc-900 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all"
           >
             Cancel
           </button>

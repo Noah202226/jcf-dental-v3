@@ -82,6 +82,7 @@ export default function SubSectionModal({
         diagnosisDate: "",
         severity: "Low",
         status: "Active",
+        conditions: [], // Add this
       },
       treatmentplans: { treatmentNote: "", treatmentDate: "" },
       notes: { name: "", description: "" },
@@ -92,7 +93,14 @@ export default function SubSectionModal({
   const handleSave = async () => {
     setAdding(true);
     try {
+      // Ensure we are sending the conditions array even if it's empty
+      const submissionData = {
+        ...form,
+        conditions: form.conditions || [],
+      };
+
       if (editingId) {
+        // Destructure Appwrite metadata to keep the update payload "clean"
         const {
           $id,
           $collectionId,
@@ -101,12 +109,13 @@ export default function SubSectionModal({
           $updatedAt,
           $permissions,
           ...cleanData
-        } = form;
+        } = submissionData;
 
         await updateItem(editingId, cleanData);
         notify.success("Record updated successfully");
       } else {
-        await addItem(patientId, form);
+        // For new items, your store spreads the data object automatically
+        await addItem(patientId, submissionData);
         notify.success("New record added");
       }
       resetForm();
@@ -194,6 +203,20 @@ export default function SubSectionModal({
                       "Untitled Record"}
                   </h4>
 
+                  {item.conditions && item.conditions.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-3 mt-1">
+                      {item.conditions.map((c) => (
+                        <span
+                          key={c}
+                          className="text-[9px] font-black bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 px-2.5 py-1 rounded-lg uppercase border border-emerald-100 dark:border-emerald-800/50 flex items-center gap-1 shadow-sm"
+                        >
+                          <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />
+                          {c}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
                   {(item.description || item.note) && (
                     <div className="mt-2 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-dashed border-zinc-200 dark:border-zinc-700">
                       <p className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 leading-relaxed italic">
@@ -242,10 +265,104 @@ export default function SubSectionModal({
 
     switch (collectionId) {
       case "medicalhistory":
+        const commonConditions = [
+          // --- Original & High Priority ---
+          "High Blood Pressure",
+          "Diabetes",
+          "Asthma",
+          "Heart Disease",
+          "Allergies",
+          "Bleeding Problems",
+          "Seizures",
+          "Hepatitis (A, B, C, D)",
+          "Pregnancy",
+
+          // --- Column 1: Cardiac & Chronic ---
+          "Osteoporosis",
+          "Herpes/ Cold sores",
+          "Radiation treatments",
+          "Chemotherapy",
+          "Artificial heart valves",
+          "Heart attack",
+          "Pacemakers",
+          "Angioplasty with stent",
+          "Stroke",
+          "Angina pectoris",
+          "Frequent high fever",
+          "Sinusitis",
+          "Emphysema",
+          "Breathing Problems",
+
+          // --- Column 2: Systemic & Symptoms ---
+          "Afternoon fever",
+          "Chronic cough",
+          "Bloody Sputum",
+          "Tuberculosis",
+          "Frequent headaches/Dizziness",
+          "Visual impairment",
+          "Hearing impairment",
+          "Arthritis",
+          "Pain in joints",
+          "Tremors",
+          "Swollen ankles",
+          "Goiter",
+          "Frequent thirst",
+          "Frequent hunger",
+          "Frequent urination",
+          "Sudden weight loss",
+
+          // --- Column 3: Internal & Lifestyle ---
+          "Abdominal discomfort",
+          "Acidic Reflux",
+          "Bleeding/Bruising easily",
+          "Recreational Drugs",
+          "Steroid therapy",
+          "Blood/Pus in urine",
+          "Pain upon urination",
+          "Kidney/Liver problems",
+          "HIV positive",
+          "Sexually transmitted Disease",
+          "Fainting spells",
+          "Depression",
+        ];
+
+        const toggleCondition = (condition) => {
+          const current = form.conditions || [];
+          const updated = current.includes(condition)
+            ? current.filter((c) => c !== condition)
+            : [...current, condition];
+          setForm({ ...form, conditions: updated });
+        };
+
         return (
           <div className="grid grid-cols-2 gap-4">
+            {/* Checkbox Grid */}
+            <div className="col-span-2 mb-2">
+              <label className={labelClass}>Medical Indicators</label>
+              {/* Added max-height and scrolling for the long list */}
+              {/* {commonConditions.length} */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2 bg-[#FFF8EA]/50 dark:bg-zinc-800/30 p-4 rounded-xl border border-[#DCD1B4]/50 dark:border-zinc-800 max-h-[220px] overflow-y-auto custom-scrollbar">
+                {commonConditions.map((condition) => (
+                  <label
+                    key={condition}
+                    className="flex items-center gap-2 cursor-pointer group py-0.5"
+                  >
+                    <input
+                      type="checkbox"
+                      className="checkbox checkbox-xs rounded-md border-zinc-400 dark:border-zinc-500 checked:bg-emerald-600 checked:border-emerald-600 [--chkfg:white]"
+                      checked={(form.conditions || []).includes(condition)}
+                      onChange={() => toggleCondition(condition)}
+                    />
+                    <span className="text-[10px] font-bold text-zinc-600 dark:text-zinc-400 group-hover:text-emerald-500 transition-colors truncate">
+                      {condition}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
             <div className="col-span-2">
-              <label className={labelClass}>Condition Name</label>
+              <label className={labelClass}>Primary Condition / Title</label>
               <input
                 type="text"
                 className={inputClass}
@@ -253,9 +370,10 @@ export default function SubSectionModal({
                 onChange={(e) =>
                   setForm({ ...form, medicalName: e.target.value })
                 }
-                placeholder="e.g. Hypertension"
+                placeholder="e.g. Chronic Hypertension"
               />
             </div>
+
             <div>
               <label className={labelClass}>Severity</label>
               <select
@@ -268,6 +386,7 @@ export default function SubSectionModal({
                 <option value="High">High</option>
               </select>
             </div>
+
             <div>
               <label className={labelClass}>Diagnosis Date</label>
               <input
@@ -279,15 +398,16 @@ export default function SubSectionModal({
                 }
               />
             </div>
+
             <div className="col-span-2">
-              <label className={labelClass}>Clinical Notes</label>
+              <label className={labelClass}>Detailed Clinical Notes</label>
               <textarea
-                className={inputClass + " textarea min-h-[100px]"}
+                className={inputClass + " textarea min-h-[80px] text-xs"}
                 value={form.description || ""}
                 onChange={(e) =>
                   setForm({ ...form, description: e.target.value })
                 }
-                placeholder="Medications, allergies..."
+                placeholder="Specific medications, allergy types, or precautions..."
               />
             </div>
           </div>
