@@ -350,8 +350,8 @@ export default function AppointmentManager() {
                         <Clock size={14} />{" "}
                         {event.date.toLocaleString([], {
                           dateStyle: "medium",
-                          timeStyle: "short",
                         })}
+                        {event.time && ` at ${event.time}`}
                       </span>
                     </div>
                     {event.notes && (
