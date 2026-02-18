@@ -1,0 +1,499 @@
+"use client";
+import { useState, useMemo, useRef } from "react";
+import Tooth from "./Tooth";
+import { notify } from "@/app/lib/notify"; // Using your saved notify path
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
+import { toPng } from "html-to-image";
+import { useDentalChartStore } from "@/app/stores/useDentalChartStore";
+
+export default function DentalChartSection({
+  items = [],
+  patientId,
+  onUpdateTooth,
+  patientName,
+  loading,
+}) {
+  const { clearChart } = useDentalChartStore();
+  const chartRef = useRef(null);
+
+  const handlePrint = async () => {
+    if (!chartRef.current) return;
+
+    try {
+      const dataUrl = await toPng(chartRef.current, {
+        quality: 1.0,
+        pixelRatio: 2,
+        backgroundColor: "#ffffff",
+      });
+
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pageWidth = pdf.internal.pageSize.getWidth();
+
+      // 1. Header with Patient Name
+      pdf.setFontSize(22);
+      pdf.setTextColor(20, 20, 20);
+      pdf.text("DENTAL CLINICAL RECORD", pageWidth / 2, 20, {
+        align: "center",
+      });
+
+      pdf.setFontSize(11);
+      pdf.setTextColor(100);
+      // Use patient name if available, fallback to ID
+      pdf.text(`Patient: ${patientName || "N/A"}`, 14, 30);
+      pdf.text(`Date: ${new Date().toLocaleDateString()}`, 14, 35);
+
+      // 2. The Visual Chart Image
+      pdf.addImage(dataUrl, "PNG", 10, 42, pageWidth - 20, 85);
+
+      // 3. Structured Data Table
+      const tableRows = items.map((item) => {
+        const surfaces =
+          typeof item.surfaces === "string"
+            ? JSON.parse(item.surfaces)
+            : item.surfaces;
+
+        // Align conditions: "TOP (C), RIGHT (Am)"
+        const findings = Object.entries(surfaces || {})
+          .filter(([_, val]) => val)
+          .map(
+            ([key, val]) => `${key.toUpperCase()}: ${val.label} (${val.abbr})`,
+          )
+          .join("\n");
+
+        // Align notes separately for readability
+        const notes = Object.entries(surfaces || {})
+          .filter(([_, val]) => val?.note)
+          .map(([key, val]) => `${key.toUpperCase()}: ${val.note}`)
+          .join("\n");
+
+        return [item.toothNumber, findings, notes];
+      });
+
+      autoTable(pdf, {
+        startY: 135,
+        head: [["Tooth #", "Condition & Surfaces", "Clinical Notes"]],
+        body: tableRows,
+        theme: "grid", // Grid theme provides better alignment lines
+        headStyles: {
+          fillColor: [31, 41, 55],
+          fontSize: 10,
+          fontStyle: "bold",
+          halign: "center",
+        },
+        styles: {
+          fontSize: 9,
+          cellPadding: 4,
+          valign: "top",
+          overflow: "linebreak",
+        },
+        columnStyles: {
+          0: { cellWidth: 20, fontStyle: "bold", halign: "center" },
+          1: { cellWidth: 70 },
+          2: { cellWidth: "auto" },
+        },
+      });
+
+      pdf.save(`Clinical_Record_${patientName || patientId}.pdf`);
+      notify.success("PDF created with patient details");
+    } catch (error) {
+      notify.error("Failed to generate readable PDF");
+    }
+  };
+
+  const UPPER = [
+    18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28,
+  ];
+  const LOWER = [
+    48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38,
+  ];
+
+  const [selection, setSelection] = useState(null); // { tooth: 18, surface: 'top' }
+  const [surfaceNote, setSurfaceNote] = useState("");
+
+  // Transform flat Appwrite items into a searchable map with parsed JSON
+  const toothMap = useMemo(() => {
+    const map = {};
+    items.forEach((item) => {
+      const toothKey = Number(item.toothNumber);
+      let parsedSurfaces = {};
+      try {
+        // Appwrite stores 'surfaces' as a string
+        parsedSurfaces =
+          typeof item.surfaces === "string"
+            ? JSON.parse(item.surfaces)
+            : item.surfaces || {};
+      } catch (e) {
+        parsedSurfaces = {};
+      }
+      map[toothKey] = { ...item, surfaces: parsedSurfaces };
+    });
+    return map;
+  }, [items]);
+
+  const handleApplyCondition = async (condition) => {
+    if (!selection) {
+      notify.error("Please select a tooth surface first");
+      return;
+    }
+
+    const { tooth, surface } = selection;
+    const existingRecord = toothMap[tooth];
+    const currentSurfaces = existingRecord?.surfaces || {};
+
+    // 👉 New Structure: surface: { id, abbr, note }
+    const updatedSurfaces = {
+      ...currentSurfaces,
+      [surface]: condition
+        ? {
+            id: condition.id,
+            abbr: condition.abbr,
+            note: surfaceNote.trim(), // Attaches the note specifically to this surface
+          }
+        : null,
+    };
+
+    const payload = {
+      ...existingRecord,
+      toothNumber: String(tooth),
+      surfaces: updatedSurfaces, // Will be stringified by your store/modal logic
+      patientId: String(patientId),
+    };
+
+    await onUpdateTooth(payload);
+    setSurfaceNote(""); // Reset note input
+  };
+
+  const handleReset = async () => {
+    if (
+      window.confirm(
+        "Are you sure? This will delete all findings for this patient.",
+      )
+    ) {
+      await clearChart(patientId);
+    }
+  };
+
+  // Grouped for better UI organization
+  const CONDITION_GROUPS = [
+    {
+      name: "Clinical Status (Red = Caries/Defect)",
+      items: [
+        { id: "caries", label: "Caries", abbr: "C", color: "bg-red-500" },
+        {
+          id: "recurrent_caries",
+          label: "Recurrent Caries",
+          abbr: "RC",
+          color: "bg-red-600",
+        },
+        { id: "fractured", label: "Fractured", abbr: "F", color: "bg-red-700" },
+        {
+          id: "impacted",
+          label: "Impacted",
+          abbr: "Imp",
+          color: "bg-orange-500",
+        },
+        {
+          id: "unerupted",
+          label: "Unerupted",
+          abbr: "Un",
+          color: "bg-orange-400",
+        },
+        {
+          id: "extraction",
+          label: "Indicated for Extraction",
+          abbr: "X",
+          color: "bg-zinc-900",
+        },
+        { id: "missing", label: "Missing", abbr: "M", color: "bg-zinc-400" },
+      ],
+    },
+    {
+      name: "Restorations (Blue = Restorations)",
+      items: [
+        { id: "amalgam", label: "Amalgam", abbr: "Am", color: "bg-blue-600" },
+        {
+          id: "composite",
+          label: "Composite",
+          abbr: "Co",
+          color: "bg-blue-500",
+        },
+        {
+          id: "glassionomer",
+          label: "Glassionomer",
+          abbr: "GI",
+          color: "bg-cyan-500",
+        },
+        {
+          id: "sealant",
+          label: "Pit and Fissure Sealant",
+          abbr: "PFS",
+          color: "bg-sky-400",
+        },
+        { id: "inlay", label: "Inlay", abbr: "In", color: "bg-indigo-500" },
+      ],
+    },
+    {
+      name: "Prosthodontics & Others",
+      items: [
+        {
+          id: "abutment",
+          label: "Abutment",
+          abbr: "Ab",
+          color: "bg-purple-600",
+        },
+        {
+          id: "apc",
+          label: "All Porcelain Crown",
+          abbr: "APC",
+          color: "bg-purple-500",
+        },
+        {
+          id: "pfc",
+          label: "Porcelain Fused to Metal",
+          abbr: "PFM",
+          color: "bg-fuchsia-600",
+        },
+        {
+          id: "pfg",
+          label: "Porcelain Fused to Gold",
+          abbr: "PFG",
+          color: "bg-amber-600",
+        },
+        {
+          id: "gold_crown",
+          label: "Gold Crown",
+          abbr: "GC",
+          color: "bg-yellow-600",
+        },
+        {
+          id: "metal_crown",
+          label: "Metal Crown",
+          abbr: "MC",
+          color: "bg-slate-500",
+        },
+        {
+          id: "ss_crown",
+          label: "Stainless Steel Crown",
+          abbr: "SS",
+          color: "bg-slate-400",
+        },
+        { id: "pontic", label: "Pontic", abbr: "P", color: "bg-emerald-700" },
+        {
+          id: "rpd",
+          label: "Removable Partial Denture",
+          abbr: "RPD",
+          color: "bg-pink-500",
+        },
+        {
+          id: "cd",
+          label: "Complete Denture",
+          abbr: "CD",
+          color: "bg-pink-600",
+        },
+        {
+          id: "caries_free",
+          label: "Caries Free",
+          abbr: "✓",
+          color: "bg-emerald-500",
+        },
+      ],
+    },
+  ];
+
+  return (
+    <div className="flex flex-col lg:grid lg:grid-cols-12 gap-6 p-4">
+      {/* LEFT: THE CHART */}
+      <div className="lg:col-span-7 bg-white dark:bg-zinc-900 border border-[#DCD1B4] rounded-[2.5rem] p-6 lg:p-10">
+        <div className="flex justify-end">
+          <button
+            onClick={handlePrint}
+            className="btn btn-primary rounded-2xl flex items-center gap-2"
+          >
+            Print Dental Chart
+          </button>
+
+          <button
+            onClick={handleReset}
+            disabled={loading}
+            className="px-4 py-2 text-[10px] font-black uppercase bg-red-50 text-red-500 rounded-xl hover:bg-red-100 transition-all border border-red-100"
+          >
+            {loading ? "Clearing..." : "Reset Chart"}
+          </button>
+        </div>
+        <div ref={chartRef} className="space-y-8 ">
+          {[
+            { label: "Maxillary", list: UPPER },
+            { label: "Mandibular", list: LOWER },
+          ].map((arch) => (
+            <div key={arch.label}>
+              <div className="text-[10px] font-black uppercase text-zinc-300 tracking-widest text-center mb-4">
+                {arch.label}
+              </div>
+              <div className="flex flex-wrap justify-center gap-2">
+                {arch.list.map((num) => (
+                  <Tooth
+                    key={num}
+                    toothNumber={num}
+                    surfaces={toothMap[num]?.surfaces ?? {}}
+                    selectedSurface={selection}
+                    onSurfaceClick={(tooth, surface) => {
+                      setSelection({ tooth, surface });
+                      // Pre-fill note if it exists
+                      setSurfaceNote(
+                        toothMap[tooth]?.surfaces?.[surface]?.note || "",
+                      );
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* BOTTOM SECTION: CONDITION SUMMARY */}
+        <div className="mt-12 bg-white dark:bg-zinc-900 rounded-[2rem] border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-sm">
+          <div className="px-8 py-4 bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-100 dark:border-zinc-800">
+            <h3 className="text-xs font-black uppercase text-zinc-400 tracking-widest">
+              Recorded Findings
+            </h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="text-[10px] font-black uppercase text-zinc-400 border-b border-zinc-100 dark:border-zinc-800">
+                  <th className="px-8 py-3">Tooth</th>
+                  <th className="px-8 py-3">Surfaces / Conditions</th>
+                  <th className="px-8 py-3">Surface Notes</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-50 dark:divide-zinc-800">
+                {items.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan="3"
+                      className="px-8 py-10 text-center text-zinc-400 text-xs italic"
+                    >
+                      No findings recorded yet.
+                    </td>
+                  </tr>
+                ) : (
+                  items.map((item) => {
+                    const surfaces =
+                      typeof item.surfaces === "string"
+                        ? JSON.parse(item.surfaces)
+                        : item.surfaces;
+                    return (
+                      <tr
+                        key={item.$id}
+                        className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30 transition-colors"
+                      >
+                        <td className="px-8 py-4">
+                          <span className="bg-zinc-900 text-white px-3 py-1 rounded-full text-xs font-black">
+                            {item.toothNumber}
+                          </span>
+                        </td>
+                        <td className="px-8 py-4">
+                          <div className="flex flex-wrap gap-2">
+                            {Object.entries(surfaces || {}).map(
+                              ([key, val]) =>
+                                val && (
+                                  <span
+                                    key={key}
+                                    className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700"
+                                  >
+                                    <span className="text-[10px] font-black uppercase text-zinc-400">
+                                      {key}:
+                                    </span>
+                                    <span className="text-[10px] font-bold text-zinc-700 dark:text-zinc-300">
+                                      {val.abbr}
+                                    </span>
+                                  </span>
+                                ),
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-8 py-4">
+                          <div className="space-y-1">
+                            {Object.entries(surfaces || {}).map(
+                              ([key, val]) =>
+                                val?.note && (
+                                  <div
+                                    key={key}
+                                    className="text-[11px] text-zinc-500"
+                                  >
+                                    <strong className="uppercase text-zinc-400 mr-1">
+                                      {key}:
+                                    </strong>{" "}
+                                    {val.note}
+                                  </div>
+                                ),
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {/* RIGHT: THE CONTROLS & STATUS BUTTONS */}
+      <div className="lg:col-span-5 space-y-4 max-h-[85vh] overflow-y-auto pr-2 custom-scrollbar">
+        {/* Note Input Area */}
+        <div className="bg-zinc-50 dark:bg-zinc-800/50 p-4 rounded-3xl border border-zinc-200 dark:border-zinc-700">
+          <h3 className="text-xs font-black uppercase text-zinc-400 mb-2">
+            {selection
+              ? `Tooth ${selection.tooth} - ${selection.surface.toUpperCase()}`
+              : "Select a surface part"}
+          </h3>
+          <textarea
+            value={surfaceNote}
+            onChange={(e) => setSurfaceNote(e.target.value)}
+            placeholder="Add specific note for this surface..."
+            className="w-full p-3 text-sm rounded-2xl border border-zinc-200 dark:bg-zinc-900 outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+            rows={2}
+          />
+        </div>
+
+        {/* Rendering All Status Buttons */}
+        {CONDITION_GROUPS.map((group) => (
+          <div key={group.name} className="space-y-2">
+            <h4 className="text-[10px] font-black uppercase text-zinc-400 px-2">
+              {group.name}
+            </h4>
+            <div className="grid grid-cols-2 gap-2">
+              {group.items.map((item) => (
+                <button
+                  key={item.id}
+                  disabled={!selection}
+                  onClick={() => handleApplyCondition(item)}
+                  className={`flex items-center gap-3 p-2 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-xl hover:shadow-md transition-all ${!selection && "opacity-50 cursor-not-allowed"}`}
+                >
+                  <div
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-bold text-white shrink-0 ${item.color}`}
+                  >
+                    {item.abbr}
+                  </div>
+                  <span className="text-[10px] font-bold text-zinc-600 dark:text-zinc-300 truncate">
+                    {item.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+
+        <button
+          onClick={() => handleApplyCondition(null)}
+          className="w-full p-3 bg-zinc-100 dark:bg-zinc-800 text-zinc-500 rounded-xl text-[10px] font-black uppercase"
+        >
+          Clear Surface
+        </button>
+      </div>
+    </div>
+  );
+}
