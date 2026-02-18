@@ -101,11 +101,27 @@ export default function DentalChartSection({
     }
   };
 
-  const UPPER = [
-    18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28,
-  ];
-  const LOWER = [
-    48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38,
+  const ARCH_GROUPS = [
+    {
+      label: "Maxillary Deciduous",
+      list: [55, 54, 53, 52, 51, 61, 62, 63, 64, 65],
+      isBaby: true,
+    },
+    {
+      label: "Maxillary Permanent",
+      list: [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28],
+      isBaby: false,
+    },
+    {
+      label: "Mandibular Permanent",
+      list: [48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38],
+      isBaby: false,
+    },
+    {
+      label: "Mandibular Deciduous",
+      list: [85, 84, 83, 82, 81, 71, 72, 73, 74, 75],
+      isBaby: true,
+    },
   ];
 
   const [selection, setSelection] = useState(null); // { tooth: 18, surface: 'top' }
@@ -304,7 +320,7 @@ export default function DentalChartSection({
   return (
     <div className="flex flex-col lg:grid lg:grid-cols-12 gap-6 p-4">
       {/* LEFT: THE CHART */}
-      <div className="lg:col-span-7 bg-white dark:bg-zinc-900 border border-[#DCD1B4] rounded-[2.5rem] p-6 lg:p-10">
+      <div className="lg:col-span-9 bg-white dark:bg-zinc-900 border border-[#DCD1B4] rounded-[2.5rem] p-6 lg:p-10">
         <div className="flex justify-end">
           <button
             onClick={handlePrint}
@@ -321,31 +337,47 @@ export default function DentalChartSection({
             {loading ? "Clearing..." : "Reset Chart"}
           </button>
         </div>
-        <div ref={chartRef} className="space-y-8 ">
-          {[
-            { label: "Maxillary", list: UPPER },
-            { label: "Mandibular", list: LOWER },
-          ].map((arch) => (
-            <div key={arch.label}>
-              <div className="text-[10px] font-black uppercase text-zinc-300 tracking-widest text-center mb-4">
+
+        <div ref={chartRef} className="space-y-6">
+          {ARCH_GROUPS.map((arch) => (
+            <div key={arch.label} className="w-full">
+              <div className="text-[9px] font-black uppercase text-zinc-300 tracking-tighter text-center mb-2">
                 {arch.label}
               </div>
-              <div className="flex flex-wrap justify-center gap-2">
-                {arch.list.map((num) => (
-                  <Tooth
-                    key={num}
-                    toothNumber={num}
-                    surfaces={toothMap[num]?.surfaces ?? {}}
-                    selectedSurface={selection}
-                    onSurfaceClick={(tooth, surface) => {
-                      setSelection({ tooth, surface });
-                      // Pre-fill note if it exists
-                      setSurfaceNote(
-                        toothMap[tooth]?.surfaces?.[surface]?.note || "",
-                      );
-                    }}
-                  />
-                ))}
+              <div className="flex justify-center gap-1 sm:gap-2">
+                {/* We split the list in half to create the Left/Right visual gap */}
+                <div className="flex gap-1 sm:gap-2 border-r border-zinc-100 pr-2">
+                  {arch.list.slice(0, arch.list.length / 2).map((num) => (
+                    <Tooth
+                      key={num}
+                      toothNumber={num}
+                      surfaces={toothMap[num]?.surfaces ?? {}}
+                      selectedSurface={selection}
+                      onSurfaceClick={(tooth, surface) => {
+                        setSelection({ tooth, surface });
+                        setSurfaceNote(
+                          toothMap[tooth]?.surfaces?.[surface]?.note || "",
+                        );
+                      }}
+                    />
+                  ))}
+                </div>
+                <div className="flex gap-1 sm:gap-2 pl-2">
+                  {arch.list.slice(arch.list.length / 2).map((num) => (
+                    <Tooth
+                      key={num}
+                      toothNumber={num}
+                      surfaces={toothMap[num]?.surfaces ?? {}}
+                      selectedSurface={selection}
+                      onSurfaceClick={(tooth, surface) => {
+                        setSelection({ tooth, surface });
+                        setSurfaceNote(
+                          toothMap[tooth]?.surfaces?.[surface]?.note || "",
+                        );
+                      }}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
           ))}
@@ -442,7 +474,7 @@ export default function DentalChartSection({
       </div>
 
       {/* RIGHT: THE CONTROLS & STATUS BUTTONS */}
-      <div className="lg:col-span-5 space-y-4 max-h-[85vh] overflow-y-auto pr-2 custom-scrollbar">
+      <div className="lg:col-span-3 space-y-4 max-h-[85vh] overflow-y-auto pr-2 custom-scrollbar">
         {/* Note Input Area */}
         <div className="bg-zinc-50 dark:bg-zinc-800/50 p-4 rounded-3xl border border-zinc-200 dark:border-zinc-700">
           <h3 className="text-xs font-black uppercase text-zinc-400 mb-2">
