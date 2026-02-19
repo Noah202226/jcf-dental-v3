@@ -17,6 +17,40 @@ export default function DentalChartSection({
   const { clearChart } = useDentalChartStore();
   const chartRef = useRef(null);
 
+  const getSurfaceLabel = (toothNumber, position) => {
+    const num = Number(toothNumber);
+
+    // 1. Determine if it's Maxillary (Upper) or Mandibular (Lower)
+    const isUpper = (num >= 11 && num <= 28) || (num >= 51 && num <= 65);
+
+    // 2. Determine if it's Anterior (Front: Canine to Canine) or Posterior (Back: Molars)
+    const isAnterior = [
+      11, 12, 13, 21, 22, 23, 31, 32, 33, 41, 42, 43, 51, 52, 53, 61, 62, 63,
+      71, 72, 73, 81, 82, 83,
+    ].includes(num);
+
+    // 3. Determine Quadrant Side (Patient's Right vs Patient's Left)
+    // Patient Right: Quadrants 1, 4, 5, 8 | Patient Left: Quadrants 2, 3, 6, 7
+    const isPatientRight = [1, 4, 5, 8].includes(Math.floor(num / 10));
+
+    switch (position) {
+      case "top":
+        if (isUpper) return isAnterior ? "LABIAL" : "BUCCAL";
+        return isAnterior ? "LINGUAL" : "LINGUAL"; // Lower internal is always Lingual
+      case "bottom":
+        if (isUpper) return isAnterior ? "PALATAL" : "PALATAL"; // Upper internal is Palatal
+        return isAnterior ? "LABIAL" : "BUCCAL"; // Lower external
+      case "left":
+        return isPatientRight ? "DISTAL" : "MESIAL";
+      case "right":
+        return isPatientRight ? "MESIAL" : "DISTAL";
+      case "center":
+        return isAnterior ? "INCISAL" : "OCCLUSAL";
+      default:
+        return position;
+    }
+  };
+
   const handlePrint = async () => {
     if (!chartRef.current) return;
 
@@ -354,7 +388,15 @@ export default function DentalChartSection({
                       surfaces={toothMap[num]?.surfaces ?? {}}
                       selectedSurface={selection}
                       onSurfaceClick={(tooth, surface) => {
-                        setSelection({ tooth, surface });
+                        // We calculate the clinical label on the fly
+                        const clinicalLabel = getSurfaceLabel(tooth, surface);
+
+                        setSelection({
+                          tooth,
+                          surface,
+                          displayLabel: clinicalLabel, // Store this for the UI
+                        });
+
                         setSurfaceNote(
                           toothMap[tooth]?.surfaces?.[surface]?.note || "",
                         );
@@ -370,7 +412,15 @@ export default function DentalChartSection({
                       surfaces={toothMap[num]?.surfaces ?? {}}
                       selectedSurface={selection}
                       onSurfaceClick={(tooth, surface) => {
-                        setSelection({ tooth, surface });
+                        // We calculate the clinical label on the fly
+                        const clinicalLabel = getSurfaceLabel(tooth, surface);
+
+                        setSelection({
+                          tooth,
+                          surface,
+                          displayLabel: clinicalLabel, // Store this for the UI
+                        });
+
                         setSurfaceNote(
                           toothMap[tooth]?.surfaces?.[surface]?.note || "",
                         );
@@ -425,6 +475,7 @@ export default function DentalChartSection({
                             {item.toothNumber}
                           </span>
                         </td>
+
                         <td className="px-8 py-4">
                           <div className="flex flex-wrap gap-2">
                             {Object.entries(surfaces || {}).map(
@@ -432,12 +483,12 @@ export default function DentalChartSection({
                                 val && (
                                   <span
                                     key={key}
-                                    className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700"
+                                    className="inline-flex items-center gap-1.5 px-2 py-1 ..."
                                   >
                                     <span className="text-[10px] font-black uppercase text-zinc-400">
-                                      {key}:
+                                      {getSurfaceLabel(item.toothNumber, key)}:
                                     </span>
-                                    <span className="text-[10px] font-bold text-zinc-700 dark:text-zinc-300">
+                                    <span className="text-[10px] font-bold text-zinc-700">
                                       {val.abbr}
                                     </span>
                                   </span>
@@ -445,6 +496,7 @@ export default function DentalChartSection({
                             )}
                           </div>
                         </td>
+
                         <td className="px-8 py-4">
                           <div className="space-y-1">
                             {Object.entries(surfaces || {}).map(
@@ -479,7 +531,7 @@ export default function DentalChartSection({
         <div className="bg-zinc-50 dark:bg-zinc-800/50 p-4 rounded-3xl border border-zinc-200 dark:border-zinc-700">
           <h3 className="text-xs font-black uppercase text-zinc-400 mb-2">
             {selection
-              ? `Tooth ${selection.tooth} - ${selection.surface.toUpperCase()}`
+              ? `Tooth ${selection.tooth} - ${selection.displayLabel}`
               : "Select a surface part"}
           </h3>
           <textarea
