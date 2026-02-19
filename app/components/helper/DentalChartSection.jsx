@@ -158,6 +158,8 @@ export default function DentalChartSection({
     },
   ];
 
+  const [isSaving, setIsSaving] = useState(false);
+  const [activeAction, setActiveAction] = useState(null);
   const [selection, setSelection] = useState(null); // { tooth: 18, surface: 'top' }
   const [surfaceNote, setSurfaceNote] = useState("");
 
@@ -187,6 +189,8 @@ export default function DentalChartSection({
       return;
     }
 
+    const actionId = condition ? condition.id : "clear";
+
     const { tooth, surface } = selection;
     const existingRecord = toothMap[tooth];
     const currentSurfaces = existingRecord?.surfaces || {};
@@ -210,8 +214,20 @@ export default function DentalChartSection({
       patientId: String(patientId),
     };
 
-    await onUpdateTooth(payload);
-    setSurfaceNote(""); // Reset note input
+    try {
+      setIsSaving(true);
+      setActiveAction(actionId); // Start Loading
+
+      await onUpdateTooth(payload);
+      setSurfaceNote("");
+      // Optional: notify.success("Saved successfully");
+    } catch (error) {
+      console.error(error);
+      notify.error(`Failed to save. Error: ${error}`);
+    } finally {
+      setIsSaving(false); // Stop Loading
+      setActiveAction(null); // I-reset pagkatapos
+    }
   };
 
   const handleReset = async () => {
@@ -536,9 +552,10 @@ export default function DentalChartSection({
           </h3>
           <textarea
             value={surfaceNote}
+            readOnly={isSaving} // Prevent typing while saving
             onChange={(e) => setSurfaceNote(e.target.value)}
-            placeholder="Add specific note for this surface..."
-            className="w-full p-3 text-sm rounded-2xl border border-zinc-200 dark:bg-zinc-900 outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+            placeholder={isSaving ? "Saving note..." : "Add specific note..."}
+            className={`w-full p-3 ... ${isSaving ? "bg-zinc-100 opacity-70" : "bg-white"}`}
             rows={2}
           />
         </div>
@@ -550,23 +567,30 @@ export default function DentalChartSection({
               {group.name}
             </h4>
             <div className="grid grid-cols-2 gap-2">
-              {group.items.map((item) => (
-                <button
-                  key={item.id}
-                  disabled={!selection}
-                  onClick={() => handleApplyCondition(item)}
-                  className={`flex items-center gap-3 p-2 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-xl hover:shadow-md transition-all ${!selection && "opacity-50 cursor-not-allowed"}`}
-                >
-                  <div
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-bold text-white shrink-0 ${item.color}`}
+              {group.items.map((item) => {
+                const isLoadingThis = activeAction === item.id;
+
+                return (
+                  <button
+                    key={item.id}
+                    disabled={!selection || isSaving} // Disable lahat kapag may sinesave
+                    onClick={() => handleApplyCondition(item)}
+                    className={`flex items-center gap-3 p-2 border rounded-xl transition-all
+        ${!selection || isSaving ? "opacity-50 cursor-not-allowed" : "hover:bg-zinc-50"}
+        ${isLoadingThis ? "border-blue-500 bg-blue-50" : "border-zinc-100"}
+      `}
                   >
-                    {item.abbr}
-                  </div>
-                  <span className="text-[10px] font-bold text-zinc-600 dark:text-zinc-300 truncate">
-                    {item.label}
-                  </span>
-                </button>
-              ))}
+                    <div
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-bold text-white ${item.color}`}
+                    >
+                      {isLoadingThis ? "..." : item.abbr}
+                    </div>
+                    <span className="text-[10px] font-bold text-zinc-600">
+                      {isLoadingThis ? "Saving..." : item.label}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         ))}
