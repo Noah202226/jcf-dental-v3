@@ -368,9 +368,9 @@ export default function DentalChartSection({
   ];
 
   return (
-    <div className="flex flex-col lg:grid lg:grid-cols-12 gap-6 p-4">
+    <div className="flex flex-col xl:grid xl:grid-cols-12 gap-4 p-2 sm:p-4 lg:p-6 max-w-full mx-auto">
       {/* LEFT: THE CHART */}
-      <div className="lg:col-span-9 bg-white dark:bg-zinc-900 border border-[#DCD1B4] rounded-[2.5rem] p-6 lg:p-10">
+      <div className="xl:col-span-9 bg-white dark:bg-zinc-900 border border-[#DCD1B4] rounded-[1.5rem] sm:rounded-[2.5rem] p-4 sm:p-6 lg:p-10 shadow-sm">
         <div className="flex justify-end">
           <button
             onClick={handlePrint}
@@ -388,60 +388,79 @@ export default function DentalChartSection({
           </button>
         </div>
 
-        <div ref={chartRef} className="space-y-6">
+        <div
+          ref={chartRef}
+          className="space-y-8 overflow-x-auto pb-4 custom-scrollbar"
+        >
           {ARCH_GROUPS.map((arch) => (
-            <div key={arch.label} className="w-full">
-              <div className="text-[9px] font-black uppercase text-zinc-300 tracking-tighter text-center mb-2">
+            <div key={arch.label} className="min-w-[600px] lg:min-w-full">
+              {/* Siguraduhin na hindi liliit sa 600px sa mobile */}
+              <div className="text-[10px] font-black uppercase text-zinc-400 tracking-widest text-center mb-4">
                 {arch.label}
               </div>
-              <div className="flex justify-center gap-1 sm:gap-2">
+
+              <div className="flex justify-center items-center gap-1 sm:gap-4 lg:gap-8">
                 {/* We split the list in half to create the Left/Right visual gap */}
                 <div className="flex gap-1 sm:gap-2 border-r border-zinc-100 pr-2">
                   {arch.list.slice(0, arch.list.length / 2).map((num) => (
-                    <Tooth
+                    <div
                       key={num}
-                      toothNumber={num}
-                      surfaces={toothMap[num]?.surfaces ?? {}}
-                      selectedSurface={selection}
-                      onSurfaceClick={(tooth, surface) => {
-                        // We calculate the clinical label on the fly
-                        const clinicalLabel = getSurfaceLabel(tooth, surface);
+                      className="scale-90 sm:scale-100 transition-transform"
+                    >
+                      <Tooth
+                        key={num}
+                        toothNumber={num}
+                        surfaces={toothMap[num]?.surfaces ?? {}}
+                        selectedSurface={selection}
+                        onSurfaceClick={(tooth, surface) => {
+                          // We calculate the clinical label on the fly
+                          const clinicalLabel = getSurfaceLabel(tooth, surface);
 
-                        setSelection({
-                          tooth,
-                          surface,
-                          displayLabel: clinicalLabel, // Store this for the UI
-                        });
+                          setSelection({
+                            tooth,
+                            surface,
+                            displayLabel: clinicalLabel, // Store this for the UI
+                          });
 
-                        setSurfaceNote(
-                          toothMap[tooth]?.surfaces?.[surface]?.note || "",
-                        );
-                      }}
-                    />
+                          setSurfaceNote(
+                            toothMap[tooth]?.surfaces?.[surface]?.note || "",
+                          );
+                        }}
+                      />
+                    </div>
                   ))}
                 </div>
-                <div className="flex gap-1 sm:gap-2 pl-2">
+
+                {/* Midline Divider */}
+                <div className="h-12 w-[1px] bg-zinc-200 hidden sm:block" />
+
+                <div className="flex gap-1 sm:gap-2">
                   {arch.list.slice(arch.list.length / 2).map((num) => (
-                    <Tooth
+                    <div
                       key={num}
-                      toothNumber={num}
-                      surfaces={toothMap[num]?.surfaces ?? {}}
-                      selectedSurface={selection}
-                      onSurfaceClick={(tooth, surface) => {
-                        // We calculate the clinical label on the fly
-                        const clinicalLabel = getSurfaceLabel(tooth, surface);
+                      className="scale-90 sm:scale-100 transition-transform"
+                    >
+                      <Tooth
+                        key={num}
+                        toothNumber={num}
+                        surfaces={toothMap[num]?.surfaces ?? {}}
+                        selectedSurface={selection}
+                        onSurfaceClick={(tooth, surface) => {
+                          // We calculate the clinical label on the fly
+                          const clinicalLabel = getSurfaceLabel(tooth, surface);
 
-                        setSelection({
-                          tooth,
-                          surface,
-                          displayLabel: clinicalLabel, // Store this for the UI
-                        });
+                          setSelection({
+                            tooth,
+                            surface,
+                            displayLabel: clinicalLabel, // Store this for the UI
+                          });
 
-                        setSurfaceNote(
-                          toothMap[tooth]?.surfaces?.[surface]?.note || "",
-                        );
-                      }}
-                    />
+                          setSurfaceNote(
+                            toothMap[tooth]?.surfaces?.[surface]?.note || "",
+                          );
+                        }}
+                      />
+                    </div>
                   ))}
                 </div>
               </div>
@@ -450,14 +469,17 @@ export default function DentalChartSection({
         </div>
 
         {/* BOTTOM SECTION: CONDITION SUMMARY */}
-        <div className="mt-12 bg-white dark:bg-zinc-900 rounded-[2rem] border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-sm">
-          <div className="px-8 py-4 bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-100 dark:border-zinc-800">
-            <h3 className="text-xs font-black uppercase text-zinc-400 tracking-widest">
+        <div className="mt-8 sm:mt-12 bg-white dark:bg-zinc-900 rounded-[1.5rem] sm:rounded-[2rem] border border-zinc-100 overflow-hidden shadow-sm">
+          <div className="px-6 py-4 bg-zinc-50/50 border-b border-zinc-50">
+            <h3 className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">
               Recorded Findings
             </h3>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+
+          <div className="overflow-x-auto shadow-inner">
+            {" "}
+            {/* Responsive wrapper for table */}
+            <table className="w-full text-left border-collapse min-w-[700px]">
               <thead>
                 <tr className="text-[10px] font-black uppercase text-zinc-400 border-b border-zinc-100 dark:border-zinc-800">
                   <th className="px-8 py-3">Tooth</th>
@@ -542,65 +564,72 @@ export default function DentalChartSection({
       </div>
 
       {/* RIGHT: THE CONTROLS & STATUS BUTTONS */}
-      <div className="lg:col-span-3 space-y-4 max-h-[85vh] overflow-y-auto pr-2 custom-scrollbar">
-        {/* Note Input Area */}
-        <div className="bg-zinc-50 dark:bg-zinc-800/50 p-4 rounded-3xl border border-zinc-200 dark:border-zinc-700">
-          <h3 className="text-xs font-black uppercase text-zinc-400 mb-2">
-            {selection
-              ? `Tooth ${selection.tooth} - ${selection.displayLabel}`
-              : "Select a surface part"}
-          </h3>
-          <textarea
-            value={surfaceNote}
-            readOnly={isSaving} // Prevent typing while saving
-            onChange={(e) => setSurfaceNote(e.target.value)}
-            placeholder={isSaving ? "Saving note..." : "Add specific note..."}
-            className={`w-full p-3 ... ${isSaving ? "bg-zinc-100 opacity-70" : "bg-white"}`}
-            rows={2}
-          />
-        </div>
+      <div className="xl:col-span-3 space-y-6">
+        <div className="sticky top-6 space-y-4">
+          {/* Naka-float ito sa desktop habang nag-scro-scroll */}
+          {/* Note Area */}
+          <div className="bg-zinc-50 dark:bg-zinc-800/50 p-4 rounded-3xl border border-zinc-200 shadow-inner">
+            <h3 className="text-xs font-black uppercase text-zinc-400 mb-2">
+              {selection
+                ? `Tooth ${selection.tooth} - ${selection.displayLabel}`
+                : "Select a surface part"}
+            </h3>
+            <textarea
+              value={surfaceNote}
+              readOnly={isSaving} // Prevent typing while saving
+              onChange={(e) => setSurfaceNote(e.target.value)}
+              placeholder={isSaving ? "Saving note..." : "Add specific note..."}
+              className={`w-full p-3 ... ${isSaving ? "bg-zinc-100 opacity-70" : "bg-white"}`}
+              rows={2}
+            />
+          </div>
+          {/* Rendering All Status Buttons */}
+          {/* Buttons Section - Gawing 2 columns sa tablet, 1 column sa desktop sidebar */}
+          <div className="space-y-6 max-h-[50vh] xl:max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+            {CONDITION_GROUPS.map((group) => (
+              <div key={group.name} className="space-y-3">
+                <h4 className="text-[10px] font-black uppercase text-zinc-400 px-2 tracking-widest">
+                  {group.name}
+                </h4>
+                <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-1 gap-2">
+                  {group.items.map((item) => {
+                    const isLoadingThis = activeAction === item.id;
 
-        {/* Rendering All Status Buttons */}
-        {CONDITION_GROUPS.map((group) => (
-          <div key={group.name} className="space-y-2">
-            <h4 className="text-[10px] font-black uppercase text-zinc-400 px-2">
-              {group.name}
-            </h4>
-            <div className="grid grid-cols-2 gap-2">
-              {group.items.map((item) => {
-                const isLoadingThis = activeAction === item.id;
-
-                return (
-                  <button
-                    key={item.id}
-                    disabled={!selection || isSaving} // Disable lahat kapag may sinesave
-                    onClick={() => handleApplyCondition(item)}
-                    className={`flex items-center gap-3 p-2 border rounded-xl transition-all
+                    return (
+                      <button
+                        key={item.id}
+                        disabled={!selection || isSaving} // Disable lahat kapag may sinesave
+                        onClick={() => handleApplyCondition(item)}
+                        className={`flex items-center gap-3 p-2 border rounded-xl transition-all
         ${!selection || isSaving ? "opacity-50 cursor-not-allowed" : "hover:bg-zinc-50"}
         ${isLoadingThis ? "border-blue-500 bg-blue-50" : "border-zinc-100"}
       `}
-                  >
-                    <div
-                      className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-bold text-white ${item.color}`}
-                    >
-                      {isLoadingThis ? "..." : item.abbr}
-                    </div>
-                    <span className="text-[10px] font-bold text-zinc-600">
-                      {isLoadingThis ? "Saving..." : item.label}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+                      >
+                        <div
+                          className={`w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-bold text-white ${item.color}`}
+                        >
+                          {isLoadingThis ? "..." : item.abbr}
+                        </div>
+                        <span className="text-[10px] font-bold text-zinc-600">
+                          {isLoadingThis ? "Saving..." : item.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
-        ))}
 
-        <button
-          onClick={() => handleApplyCondition(null)}
-          className="w-full p-3 bg-zinc-100 dark:bg-zinc-800 text-zinc-500 rounded-xl text-[10px] font-black uppercase"
-        >
-          Clear Surface
-        </button>
+          {/* Clear Button */}
+          <button
+            onClick={() => handleApplyCondition(null)}
+            disabled={!selection || isSaving}
+            className="w-full p-4 bg-zinc-900 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-zinc-800 transition-all flex justify-center items-center gap-2 shadow-lg active:scale-95"
+          >
+            {activeAction === "clear" ? "Clearing..." : "Clear Surface"}
+          </button>
+        </div>
       </div>
     </div>
   );
