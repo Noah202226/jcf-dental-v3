@@ -24,6 +24,8 @@ export default function PatientsSection() {
     patient: null,
   });
 
+  const [isInitialFetching, setIsInitialFetching] = useState(true);
+
   // States for delete authorization
   const [deletePassword, setDeletePassword] = useState("");
   const [showPassword, setShowPassword] = useState(false); // New state for visibility toggle
@@ -39,10 +41,18 @@ export default function PatientsSection() {
     useTransactionsStore();
 
   useEffect(() => {
-    fetchAllPayments();
-    fetchPatients();
-    getWithBalancePatients();
-  }, [fetchPatients]);
+    const loadData = async () => {
+      setIsInitialFetching(true);
+      await Promise.all([
+        fetchAllPayments(),
+        fetchPatients(),
+        getWithBalancePatients(),
+      ]);
+      setIsInitialFetching(false);
+    };
+
+    loadData();
+  }, [fetchPatients]); // Note: Ensure fetchPatients is stable or remove from deps if it causes loops
 
   const handleView = (patient) => {
     setSelectedPatient(patient);
@@ -94,6 +104,26 @@ export default function PatientsSection() {
     p.patientName.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
+  const SkeletonRow = () => (
+    <tr className="animate-pulse border-b border-zinc-100 dark:border-zinc-900">
+      <td className="py-6 px-8">
+        <div className="h-4 w-32 bg-zinc-200 dark:bg-zinc-800 rounded-lg" />
+      </td>
+      <td>
+        <div className="h-3 w-48 bg-zinc-100 dark:bg-zinc-800/50 rounded-lg" />
+      </td>
+      <td>
+        <div className="h-3 w-24 bg-zinc-100 dark:bg-zinc-800/50 rounded-lg" />
+      </td>
+      <td className="px-8">
+        <div className="flex justify-end gap-3">
+          <div className="w-10 h-10 bg-zinc-100 dark:bg-zinc-800 rounded-xl" />
+          <div className="w-10 h-10 bg-zinc-100 dark:bg-zinc-800 rounded-xl" />
+        </div>
+      </td>
+    </tr>
+  );
+
   return (
     <div className="p-4 lg:p-8 space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
       {/* Header Area */}
@@ -129,7 +159,11 @@ export default function PatientsSection() {
             Total Registry
           </p>
           <div className="text-3xl lg:text-4xl font-black text-zinc-900 dark:text-zinc-100 tracking-tighter">
-            {patients.length}
+            {isInitialFetching ? (
+              <div className="h-10 w-12 bg-zinc-200 dark:bg-zinc-800 rounded-lg animate-pulse" />
+            ) : (
+              patients.length
+            )}
           </div>
         </div>
 
@@ -137,8 +171,13 @@ export default function PatientsSection() {
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-red-400 mb-2">
             Pending Balances
           </p>
-          <div className="text-3xl lg:text-4xl font-black text-red-500 tracking-tighter">
-            {withBalancePatients.length}
+
+          <div className="text-3xl lg:text-4xl font-black text-zinc-900 dark:text-zinc-100 tracking-tighter">
+            {isInitialFetching ? (
+              <div className="h-10 w-12 bg-zinc-200 dark:bg-zinc-800 rounded-lg animate-pulse" />
+            ) : (
+              withBalancePatients.length
+            )}
           </div>
         </div>
 
@@ -146,11 +185,18 @@ export default function PatientsSection() {
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-400 mb-2">
             Total Receivables
           </p>
-          <div className="text-3xl lg:text-4xl font-black text-emerald-600 dark:text-emerald-400 tracking-tighter">
-            ₱
-            {withBalancePatients
-              .reduce((sum, p) => sum + p.remaining, 0)
-              .toLocaleString()}
+
+          <div className="text-3xl lg:text-4xl font-black text-zinc-900 dark:text-zinc-100 tracking-tighter">
+            {isInitialFetching ? (
+              <div className="h-10 w-12 bg-zinc-200 dark:bg-zinc-800 rounded-lg animate-pulse" />
+            ) : (
+              <>
+                ₱
+                {withBalancePatients
+                  .reduce((sum, p) => sum + p.remaining, 0)
+                  .toLocaleString()}
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -183,7 +229,10 @@ export default function PatientsSection() {
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-50 dark:divide-zinc-900">
-              {filteredPatients.length > 0 ? (
+              {isInitialFetching ? (
+                // Show 5 skeleton rows while loading
+                [...Array(5)].map((_, i) => <SkeletonRow key={i} />)
+              ) : filteredPatients.length > 0 ? (
                 [...filteredPatients]
                   .sort((a, b) => a.patientName.localeCompare(b.patientName))
                   .map((patient) => (
