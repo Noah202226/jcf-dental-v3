@@ -4,6 +4,7 @@ import { create } from "zustand";
 import { databases, ID } from "../lib/appwrite";
 import toast from "react-hot-toast";
 import { Query } from "appwrite";
+import { notify } from "../lib/notify";
 
 const DATABASE_ID = process.env.NEXT_PUBLIC_DATABASE_ID;
 const TRANSACTIONS_COLLECTION_ID = "transactions";
@@ -30,7 +31,7 @@ export const useTransactionsStore = create((set, get) => ({
 
           // 2. Increase limit: Fetch up to 100 (or more) active balances
           Query.limit(1000),
-        ]
+        ],
       );
       const patients = res.documents.filter((txn) => txn.remaining > 0);
       set({ withBalancePatients: patients, loading: false });
@@ -78,7 +79,7 @@ export const useTransactionsStore = create((set, get) => ({
         DATABASE_ID,
         TRANSACTIONS_COLLECTION_ID,
         ID.unique(),
-        data
+        data,
       );
       set((state) => ({
         transactions: [...state.transactions, doc],
@@ -97,7 +98,7 @@ export const useTransactionsStore = create((set, get) => ({
         DATABASE_ID,
         INSTALLMENTS_COLLECTION_ID,
         ID.unique(),
-        data
+        data,
       );
       set((state) => ({
         installments: [...state.installments, doc],
@@ -116,15 +117,14 @@ export const useTransactionsStore = create((set, get) => ({
         DATABASE_ID,
         EXPENSES_COLLECTION_ID,
         ID.unique(),
-        data
+        data,
       );
       set((state) => ({
         expenses: [...state.expenses, doc],
       }));
-      toast.success("Expense added");
     } catch (err) {
       console.error("Error adding expense:", err);
-      toast.error("Failed to add expense");
+      notify.error("Failed to add expense");
     }
   },
 
@@ -134,7 +134,7 @@ export const useTransactionsStore = create((set, get) => ({
       await databases.deleteDocument(
         DATABASE_ID,
         TRANSACTIONS_COLLECTION_ID,
-        id
+        id,
       );
       set((state) => ({
         transactions: state.transactions.filter((t) => t.$id !== id),
@@ -152,7 +152,7 @@ export const useTransactionsStore = create((set, get) => ({
       await databases.deleteDocument(
         DATABASE_ID,
         INSTALLMENTS_COLLECTION_ID,
-        id
+        id,
       );
       set((state) => ({
         installments: state.installments.filter((i) => i.$id !== id),
@@ -171,7 +171,6 @@ export const useTransactionsStore = create((set, get) => ({
       set((state) => ({
         expenses: state.expenses.filter((e) => e.$id !== id),
       }));
-      toast.success("Expense deleted");
     } catch (err) {
       console.error("Error deleting expense:", err);
       toast.error("Failed to delete expense");
@@ -185,8 +184,8 @@ export const useTransactionsStore = create((set, get) => ({
         type === "Installment"
           ? INSTALLMENTS_COLLECTION_ID
           : type === "Expense"
-          ? EXPENSES_COLLECTION_ID
-          : TRANSACTIONS_COLLECTION_ID;
+            ? EXPENSES_COLLECTION_ID
+            : TRANSACTIONS_COLLECTION_ID;
 
       await databases.deleteDocument(DATABASE_ID, collectionId, id);
 
@@ -209,11 +208,11 @@ export const useTransactionsStore = create((set, get) => ({
 
     const totalRevenue = [...transactions, ...installments].reduce(
       (sum, p) => sum + parseFloat(p.amount || 0),
-      0
+      0,
     );
     const totalExpenses = expenses.reduce(
       (sum, e) => sum + parseFloat(e.amount || 0),
-      0
+      0,
     );
     const totalTransactions = transactions.length;
     const totalInstallments = installments.length;
