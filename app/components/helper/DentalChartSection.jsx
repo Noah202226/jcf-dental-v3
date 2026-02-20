@@ -57,81 +57,73 @@ export default function DentalChartSection({
     try {
       const dataUrl = await toPng(chartRef.current, {
         quality: 1.0,
-        pixelRatio: 2,
+        pixelRatio: 3,
         backgroundColor: "#ffffff",
       });
 
       const pdf = new jsPDF("p", "mm", "a4");
       const pageWidth = pdf.internal.pageSize.getWidth();
+      const margin = 15;
 
-      // 1. Header with Patient Name
-      pdf.setFontSize(22);
-      pdf.setTextColor(20, 20, 20);
+      // 1. REDUCE CONTENT WIDTH
+      // We use a scale factor (e.g., 0.85) to ensure it doesn't hit the left/right edges
+      const maxImageWidth = (pageWidth - margin * 2) * 0.9;
+
+      // Header Section
+      pdf.setFontSize(20);
       pdf.text("DENTAL CLINICAL RECORD", pageWidth / 2, 20, {
         align: "center",
       });
 
-      pdf.setFontSize(11);
+      pdf.setFontSize(10);
       pdf.setTextColor(100);
-      // Use patient name if available, fallback to ID
-      pdf.text(`Patient: ${patientName || "N/A"}`, 14, 30);
-      pdf.text(`Date: ${new Date().toLocaleDateString()}`, 14, 35);
+      pdf.text(`Patient: ${patientName || "N/A"}`, margin, 32);
+      pdf.text(`Date: ${new Date().toLocaleDateString()}`, margin, 37);
 
-      // 2. The Visual Chart Image
-      pdf.addImage(dataUrl, "PNG", 10, 42, pageWidth - 20, 85);
+      // 2. CALCULATE CENTERED POSITION
+      const imgProps = pdf.getImageProperties(dataUrl);
+      const displayWidth = maxImageWidth;
+      const displayHeight = (imgProps.height * displayWidth) / imgProps.width;
 
-      // 3. Structured Data Table
+      // Calculate X to center the image: (PageWidth - ImageWidth) / 2
+      const centeredX = (pageWidth - displayWidth) / 2;
+
+      // 3. ADD IMAGE
+      pdf.addImage(dataUrl, "PNG", centeredX, 45, displayWidth, displayHeight);
+
+      // 4. TABLE POSITIONING
+      const tableStartY = 45 + displayHeight + 10;
+
       const tableRows = items.map((item) => {
         const surfaces =
           typeof item.surfaces === "string"
             ? JSON.parse(item.surfaces)
             : item.surfaces;
 
-        // Align conditions: "TOP (C), RIGHT (Am)"
         const findings = Object.entries(surfaces || {})
           .filter(([_, val]) => val)
           .map(
-            ([key, val]) => `${key.toUpperCase()}: ${val.label} (${val.abbr})`,
+            ([key, val]) =>
+              `${getSurfaceLabel(item.toothNumber, key)}: ${val.label} (${val.abbr})`,
           )
           .join("\n");
 
-        // Align notes separately for readability
-        const notes = Object.entries(surfaces || {})
-          .filter(([_, val]) => val?.note)
-          .map(([key, val]) => `${key.toUpperCase()}: ${val.note}`)
-          .join("\n");
-
-        return [item.toothNumber, findings, notes];
+        return [item.toothNumber, findings, ""];
       });
 
       autoTable(pdf, {
-        startY: 135,
+        startY: tableStartY,
         head: [["Tooth #", "Condition & Surfaces", "Clinical Notes"]],
         body: tableRows,
-        theme: "grid", // Grid theme provides better alignment lines
-        headStyles: {
-          fillColor: [31, 41, 55],
-          fontSize: 10,
-          fontStyle: "bold",
-          halign: "center",
-        },
-        styles: {
-          fontSize: 9,
-          cellPadding: 4,
-          valign: "top",
-          overflow: "linebreak",
-        },
-        columnStyles: {
-          0: { cellWidth: 20, fontStyle: "bold", halign: "center" },
-          1: { cellWidth: 70 },
-          2: { cellWidth: "auto" },
-        },
+        theme: "grid",
+        headStyles: { fillColor: [40, 40, 40] },
+        styles: { fontSize: 8 },
+        margin: { left: margin, right: margin }, // Align table with the page margins
       });
 
-      pdf.save(`Clinical_Record_${patientName || patientId}.pdf`);
-      notify.success("PDF created with patient details");
+      pdf.save(`Dental_Chart_${patientName || "Record"}.pdf`);
     } catch (error) {
-      notify.error("Failed to generate readable PDF");
+      console.error("PDF Error:", error);
     }
   };
 
