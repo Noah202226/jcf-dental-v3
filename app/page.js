@@ -74,7 +74,7 @@ export default function HomePage() {
         <div className="flex flex-col items-center gap-4 w-72 text-center">
           <div className="flex flex-col items-center gap-1">
             <p className="text-[11px] font-black uppercase tracking-[0.4em] text-zinc-900 dark:text-white">
-              JCF Dental <span className="text-red-500 italic">Hero</span>
+              JCF Dental <span className="text-red-500 italic">Clinic</span>
             </p>
             <div className="w-full h-1 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden mt-2">
               <div className="h-full bg-red-500 animate-[progress_2s_ease-in-out_infinite] w-1/2 rounded-full" />

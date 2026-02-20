@@ -390,22 +390,26 @@ export default function DentalChartSection({
 
         <div
           ref={chartRef}
-          className="space-y-8 overflow-x-auto pb-4 custom-scrollbar"
+          className="space-y-8 overflow-x-auto pb-4 custom-scrollbar flex flex-col"
         >
           {ARCH_GROUPS.map((arch) => (
-            <div key={arch.label} className="min-w-[600px] lg:min-w-full">
+            <div
+              key={arch.label}
+              className="flex flex-col items-center min-w-max ml-0 sm:ml-10 md:ml-10 lg:ml-20"
+            >
               {/* Siguraduhin na hindi liliit sa 600px sa mobile */}
               <div className="text-[10px] font-black uppercase text-zinc-400 tracking-widest text-center mb-4">
                 {arch.label}
               </div>
 
-              <div className="flex justify-center items-center gap-1 sm:gap-4 lg:gap-8">
+              {/* <div className="flex justify-center items-center gap-1 sm:gap-4 lg:gap-8 w-max mx-auto flex-shrink-0"> */}
+              <div className="flex justify-center items-center w-full max-w-5xl mx-auto px-2">
                 {/* We split the list in half to create the Left/Right visual gap */}
-                <div className="flex gap-1 sm:gap-2 border-r border-zinc-100 pr-2">
+                <div className="flex flex-1 justify-end gap-1 sm:gap-2 min-w-max">
                   {arch.list.slice(0, arch.list.length / 2).map((num) => (
                     <div
                       key={num}
-                      className="scale-90 sm:scale-100 transition-transform"
+                      className="scale-75 sm:scale-90 lg:scale-100 flex-shrink-0"
                     >
                       <Tooth
                         key={num}
@@ -431,14 +435,16 @@ export default function DentalChartSection({
                   ))}
                 </div>
 
-                {/* Midline Divider */}
-                <div className="h-12 w-[1px] bg-zinc-200 hidden sm:block" />
+                {/* CENTER MIDLINE DIVIDER */}
+                <div className="flex flex-col items-center justify-center mx-1 sm:mx-4 flex-shrink-0">
+                  <div className="h-18 w-[1.5px] bg-zinc-300 dark:bg-zinc-700" />
+                </div>
 
-                <div className="flex gap-1 sm:gap-2">
+                <div className="flex flex-1 justify-start gap-1 sm:gap-2 min-w-max">
                   {arch.list.slice(arch.list.length / 2).map((num) => (
                     <div
                       key={num}
-                      className="scale-90 sm:scale-100 transition-transform"
+                      className="scale-75 sm:scale-90 lg:scale-100 flex-shrink-0"
                     >
                       <Tooth
                         key={num}
