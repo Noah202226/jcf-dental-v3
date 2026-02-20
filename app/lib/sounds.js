@@ -7,7 +7,7 @@ export const playSound = (type) => {
   );
 
   // Lower the volume slightly so it's not jarring
-  audio.volume = 0.01;
+  audio.volume = 0.06;
 
   audio.play().catch((err) => {
     // Browsers sometimes block audio if the user hasn't interacted with the page yet

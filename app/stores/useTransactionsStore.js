@@ -56,6 +56,7 @@ export const useTransactionsStore = create((set, get) => ({
         ]),
         databases.listDocuments(DATABASE_ID, EXPENSES_COLLECTION_ID, [
           Query.limit(10000),
+          Query.orderDesc("$createdAt"),
         ]),
       ]);
 
@@ -120,7 +121,7 @@ export const useTransactionsStore = create((set, get) => ({
         data,
       );
       set((state) => ({
-        expenses: [...state.expenses, doc],
+        expenses: [doc, ...state.expenses],
       }));
     } catch (err) {
       console.error("Error adding expense:", err);
