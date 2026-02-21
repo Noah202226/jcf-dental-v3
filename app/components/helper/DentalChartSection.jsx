@@ -55,30 +55,29 @@ export default function DentalChartSection({
     if (!chartRef.current) return;
 
     try {
-      // 1. CAPTURE FULL DIMENSIONS
-      // We target the scrollWidth/Height to ensure teeth on the right aren't cut off
-      const fullWidth = chartRef.current.scrollWidth;
-      const fullHeight = chartRef.current.scrollHeight;
-
-      const dataUrl = await toPng(chartRef.current, {
-        quality: 1.0,
-        pixelRatio: 2,
-        backgroundColor: "#ffffff",
-        width: fullWidth,
-        height: fullHeight,
-        style: {
-          transform: "scale(1)",
-          left: 0,
-          top: 0,
-        },
-      });
-
       const pdf = new jsPDF("p", "mm", "a4");
       const pageWidth = pdf.internal.pageSize.getWidth();
       const margin = 15;
+      const chartMaxWidth = pageWidth - margin * 2;
 
-      // Header Section
-      pdf.setFontSize(20);
+      // 1. CAPTURE WITH FIXED DIMENSIONS
+      // We force a specific width during capture to ensure it's not "cut off" by the UI container
+      const dataUrl = await toPng(chartRef.current, {
+        quality: 1.0,
+        pixelRatio: 3,
+        backgroundColor: "#ffffff",
+        // These dimensions ensure the full chart is seen regardless of screen size
+        width: 1200,
+        style: {
+          padding: "40px",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        },
+      });
+
+      // --- HEADER ---
+      pdf.setFontSize(22);
       pdf.text("DENTAL CLINICAL RECORD", pageWidth / 2, 20, {
         align: "center",
       });
@@ -86,59 +85,64 @@ export default function DentalChartSection({
       pdf.setFontSize(10);
       pdf.setTextColor(100);
       pdf.text(`Patient: ${patientName || "N/A"}`, margin, 32);
-      pdf.text(`Date: ${new Date().toLocaleDateString()}`, margin, 37);
+      pdf.text(
+        `Date: ${new Date().toLocaleDateString()}`,
+        pageWidth - margin,
+        32,
+        { align: "right" },
+      );
 
-      // 2. CALCULATE IMAGE POSITION
-      const maxImageWidth = pageWidth - margin * 2;
+      pdf.setDrawColor(200);
+      pdf.line(margin, 36, pageWidth - margin, 36);
+
+      // --- CENTERED CHART IMAGE ---
       const imgProps = pdf.getImageProperties(dataUrl);
-      const displayWidth = maxImageWidth;
+      const displayWidth = chartMaxWidth;
       const displayHeight = (imgProps.height * displayWidth) / imgProps.width;
-      const centeredX = (pageWidth - displayWidth) / 2;
 
-      pdf.addImage(dataUrl, "PNG", centeredX, 45, displayWidth, displayHeight);
+      // This centers the image horizontally and places it below the header
+      pdf.addImage(dataUrl, "PNG", margin, 42, displayWidth, displayHeight);
 
-      // 3. DEFINE TABLEROWS (The missing logic)
-      // This maps your items into a format autoTable understands
+      // --- DATA TABLE ---
       const tableRows = items.map((item) => {
         const surfaces =
           typeof item.surfaces === "string"
             ? JSON.parse(item.surfaces)
             : item.surfaces;
-
         const findings = Object.entries(surfaces || {})
           .filter(([_, val]) => val)
           .map(
             ([key, val]) =>
-              `${getSurfaceLabel(item.toothNumber, key)}: ${val.label || val.abbr} (${val.abbr})`,
+              `${getSurfaceLabel(item.toothNumber, key)}: ${val.abbr}`,
           )
+          .join(", ");
+
+        const notes = Object.entries(surfaces || {})
+          .filter(([_, val]) => val?.note)
+          .map(([key, val]) => `${key.toUpperCase()}: ${val.note}`)
           .join("\n");
 
-        // Returning [Tooth #, Conditions, Notes]
-        return [item.toothNumber, findings, ""];
+        return [item.toothNumber, findings, notes];
       });
 
-      // 4. GENERATE TABLE
-      const tableStartY = 45 + displayHeight + 10;
+      // Start table exactly 10mm below the image to keep vertical balance
+      const tableStartY = 42 + displayHeight + 10;
 
       autoTable(pdf, {
         startY: tableStartY,
         head: [["Tooth #", "Condition & Surfaces", "Clinical Notes"]],
         body: tableRows,
         theme: "grid",
-        headStyles: { fillColor: [40, 40, 40] },
-        styles: { fontSize: 8, cellPadding: 3 },
-        columnStyles: {
-          0: { cellWidth: 25 }, // Tooth # column width
-          1: { cellWidth: "auto" },
-          2: { cellWidth: 50 }, // Notes column width
-        },
+        headStyles: { fillColor: [40, 40, 40], halign: "center" },
+        styles: { fontSize: 8, cellPadding: 4 },
+        columnStyles: { 0: { cellWidth: 20 }, 1: { cellWidth: 70 } },
         margin: { left: margin, right: margin },
       });
 
       pdf.save(`Dental_Chart_${patientName || "Record"}.pdf`);
     } catch (error) {
       console.error("PDF Error:", error);
-      notify.error("Failed to generate PDF. Please try again.");
+      notify.error("Alignment failed. Try closing other tabs.");
     }
   };
 
