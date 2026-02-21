@@ -55,19 +55,27 @@ export default function DentalChartSection({
     if (!chartRef.current) return;
 
     try {
+      // 1. CAPTURE FULL DIMENSIONS
+      // We target the scrollWidth/Height to ensure teeth on the right aren't cut off
+      const fullWidth = chartRef.current.scrollWidth;
+      const fullHeight = chartRef.current.scrollHeight;
+
       const dataUrl = await toPng(chartRef.current, {
         quality: 1.0,
-        pixelRatio: 3,
+        pixelRatio: 2,
         backgroundColor: "#ffffff",
+        width: fullWidth,
+        height: fullHeight,
+        style: {
+          transform: "scale(1)",
+          left: 0,
+          top: 0,
+        },
       });
 
       const pdf = new jsPDF("p", "mm", "a4");
       const pageWidth = pdf.internal.pageSize.getWidth();
       const margin = 15;
-
-      // 1. REDUCE CONTENT WIDTH
-      // We use a scale factor (e.g., 0.85) to ensure it doesn't hit the left/right edges
-      const maxImageWidth = (pageWidth - margin * 2) * 0.9;
 
       // Header Section
       pdf.setFontSize(20);
@@ -80,20 +88,17 @@ export default function DentalChartSection({
       pdf.text(`Patient: ${patientName || "N/A"}`, margin, 32);
       pdf.text(`Date: ${new Date().toLocaleDateString()}`, margin, 37);
 
-      // 2. CALCULATE CENTERED POSITION
+      // 2. CALCULATE IMAGE POSITION
+      const maxImageWidth = pageWidth - margin * 2;
       const imgProps = pdf.getImageProperties(dataUrl);
       const displayWidth = maxImageWidth;
       const displayHeight = (imgProps.height * displayWidth) / imgProps.width;
-
-      // Calculate X to center the image: (PageWidth - ImageWidth) / 2
       const centeredX = (pageWidth - displayWidth) / 2;
 
-      // 3. ADD IMAGE
       pdf.addImage(dataUrl, "PNG", centeredX, 45, displayWidth, displayHeight);
 
-      // 4. TABLE POSITIONING
-      const tableStartY = 45 + displayHeight + 10;
-
+      // 3. DEFINE TABLEROWS (The missing logic)
+      // This maps your items into a format autoTable understands
       const tableRows = items.map((item) => {
         const surfaces =
           typeof item.surfaces === "string"
@@ -104,12 +109,16 @@ export default function DentalChartSection({
           .filter(([_, val]) => val)
           .map(
             ([key, val]) =>
-              `${getSurfaceLabel(item.toothNumber, key)}: ${val.label} (${val.abbr})`,
+              `${getSurfaceLabel(item.toothNumber, key)}: ${val.label || val.abbr} (${val.abbr})`,
           )
           .join("\n");
 
+        // Returning [Tooth #, Conditions, Notes]
         return [item.toothNumber, findings, ""];
       });
+
+      // 4. GENERATE TABLE
+      const tableStartY = 45 + displayHeight + 10;
 
       autoTable(pdf, {
         startY: tableStartY,
@@ -117,13 +126,19 @@ export default function DentalChartSection({
         body: tableRows,
         theme: "grid",
         headStyles: { fillColor: [40, 40, 40] },
-        styles: { fontSize: 8 },
-        margin: { left: margin, right: margin }, // Align table with the page margins
+        styles: { fontSize: 8, cellPadding: 3 },
+        columnStyles: {
+          0: { cellWidth: 25 }, // Tooth # column width
+          1: { cellWidth: "auto" },
+          2: { cellWidth: 50 }, // Notes column width
+        },
+        margin: { left: margin, right: margin },
       });
 
       pdf.save(`Dental_Chart_${patientName || "Record"}.pdf`);
     } catch (error) {
       console.error("PDF Error:", error);
+      notify.error("Failed to generate PDF. Please try again.");
     }
   };
 
@@ -385,9 +400,10 @@ export default function DentalChartSection({
           className="space-y-8 overflow-x-auto pb-4 custom-scrollbar flex flex-col"
         >
           {ARCH_GROUPS.map((arch) => (
+            // To this (Remove the ml- classes):
             <div
               key={arch.label}
-              className="flex flex-col items-center min-w-max ml-0 sm:ml-10 md:ml-10 lg:ml-20"
+              className="flex flex-col items-center w-full min-w-max"
             >
               {/* Siguraduhin na hindi liliit sa 600px sa mobile */}
               <div className="text-[10px] font-black uppercase text-zinc-400 tracking-widest text-center mb-4">
