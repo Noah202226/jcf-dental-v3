@@ -54,56 +54,62 @@ export default function DentalChartSection({
   const handlePrint = async () => {
     if (!chartRef.current) return;
 
+    // 1. Create a "Sandbox" container that is forced to be wide
+    const sandbox = document.createElement("div");
+    sandbox.style.position = "absolute";
+    sandbox.style.left = "-9999px"; // Hide it off-screen
+    sandbox.style.top = "0";
+    sandbox.style.width = "1200px"; // Force desktop width
+    document.body.appendChild(sandbox);
+
+    // 2. Clone your chart and put it in the sandbox
+    const clone = chartRef.current.cloneNode(true);
+    clone.style.width = "1200px";
+    clone.style.backgroundColor = "white";
+    sandbox.appendChild(clone);
+
     try {
-      const pdf = new jsPDF("p", "mm", "a4");
+      // 3. Capture the sandbox version
+      const dataUrl = await toPng(clone, {
+        quality: 1.0,
+        pixelRatio: 2,
+        width: 1200,
+        // We don't set height; let it calculate based on the new 1200px layout
+      });
+
+      // Cleanup: Remove sandbox immediately after capture
+      document.body.removeChild(sandbox);
+
+      // 4. Setup Landscape PDF
+      const pdf = new jsPDF("l", "mm", "a4");
       const pageWidth = pdf.internal.pageSize.getWidth();
       const margin = 15;
       const chartMaxWidth = pageWidth - margin * 2;
 
-      // 1. CAPTURE WITH FIXED DIMENSIONS
-      // We force a specific width during capture to ensure it's not "cut off" by the UI container
-      const dataUrl = await toPng(chartRef.current, {
-        quality: 1.0,
-        pixelRatio: 3,
-        backgroundColor: "#ffffff",
-        // These dimensions ensure the full chart is seen regardless of screen size
-        width: 1200,
-        style: {
-          padding: "40px",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-        },
-      });
-
       // --- HEADER ---
       pdf.setFontSize(22);
-      pdf.text("DENTAL CLINICAL RECORD", pageWidth / 2, 20, {
+      pdf.text("DENTAL CLINICAL RECORD", pageWidth / 2, 18, {
         align: "center",
       });
-
       pdf.setFontSize(10);
-      pdf.setTextColor(100);
-      pdf.text(`Patient: ${patientName || "N/A"}`, margin, 32);
+      pdf.text(`Patient: ${patientName || "N/A"}`, margin, 28);
       pdf.text(
         `Date: ${new Date().toLocaleDateString()}`,
         pageWidth - margin,
-        32,
+        28,
         { align: "right" },
       );
+      pdf.line(margin, 32, pageWidth - margin, 32);
 
-      pdf.setDrawColor(200);
-      pdf.line(margin, 36, pageWidth - margin, 36);
-
-      // --- CENTERED CHART IMAGE ---
+      // --- ADD IMAGE ---
       const imgProps = pdf.getImageProperties(dataUrl);
       const displayWidth = chartMaxWidth;
       const displayHeight = (imgProps.height * displayWidth) / imgProps.width;
 
-      // This centers the image horizontally and places it below the header
-      pdf.addImage(dataUrl, "PNG", margin, 42, displayWidth, displayHeight);
+      // Position image on page 1
+      pdf.addImage(dataUrl, "PNG", margin, 38, displayWidth, displayHeight);
 
-      // --- DATA TABLE ---
+      // --- TABLE (Automatic Page 2 if needed) ---
       const tableRows = items.map((item) => {
         const surfaces =
           typeof item.surfaces === "string"
@@ -111,38 +117,24 @@ export default function DentalChartSection({
             : item.surfaces;
         const findings = Object.entries(surfaces || {})
           .filter(([_, val]) => val)
-          .map(
-            ([key, val]) =>
-              `${getSurfaceLabel(item.toothNumber, key)}: ${val.abbr}`,
-          )
+          .map(([key, val]) => `${key.toUpperCase()}: ${val.abbr}`)
           .join(", ");
-
-        const notes = Object.entries(surfaces || {})
-          .filter(([_, val]) => val?.note)
-          .map(([key, val]) => `${key.toUpperCase()}: ${val.note}`)
-          .join("\n");
-
-        return [item.toothNumber, findings, notes];
+        return [item.toothNumber, findings, ""];
       });
 
-      // Start table exactly 10mm below the image to keep vertical balance
-      const tableStartY = 42 + displayHeight + 10;
-
       autoTable(pdf, {
-        startY: tableStartY,
+        startY: 40 + displayHeight + 15,
         head: [["Tooth #", "Condition & Surfaces", "Clinical Notes"]],
         body: tableRows,
         theme: "grid",
-        headStyles: { fillColor: [40, 40, 40], halign: "center" },
-        styles: { fontSize: 8, cellPadding: 4 },
-        columnStyles: { 0: { cellWidth: 20 }, 1: { cellWidth: 70 } },
         margin: { left: margin, right: margin },
+        styles: { fontSize: 9 },
       });
 
-      pdf.save(`Dental_Chart_${patientName || "Record"}.pdf`);
+      pdf.save(`Dental_Chart_${patientName}.pdf`);
     } catch (error) {
-      console.error("PDF Error:", error);
-      notify.error("Alignment failed. Try closing other tabs.");
+      console.error("Capture failed:", error);
+      document.body.removeChild(sandbox); // Safety cleanup
     }
   };
 
