@@ -14,7 +14,7 @@ import {
   Mail,
   X,
   AlertTriangle,
-  ChevronRight,
+  RefreshCw, // New icon for manual refresh
 } from "lucide-react";
 import { databases, client, ID } from "@/app/lib/appwrite";
 import { Query } from "appwrite";
@@ -32,6 +32,8 @@ export default function AppointmentManager() {
   const [showModal, setShowModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false); // Track manual/auto refresh state
+  const [lastUpdated, setLastUpdated] = useState(new Date());
 
   const [newEvent, setNewEvent] = useState({
     title: "",
@@ -44,27 +46,60 @@ export default function AppointmentManager() {
   const [rescheduleEvent, setRescheduleEvent] = useState(null);
   const [newDateValue, setNewDateValue] = useState("");
 
-  const fetchDocs = useCallback(async () => {
+  // --- 1. Enhanced Fetch Logic ---
+  const fetchDocs = useCallback(async (silent = false) => {
+    if (!silent) setIsRefreshing(true);
     try {
       const res = await databases.listDocuments(DATABASE_ID, COLLECTION_ID, [
         Query.orderAsc("date"),
       ]);
       setEvents(res.documents.map((d) => ({ ...d, date: new Date(d.date) })));
+      setLastUpdated(new Date());
     } catch (e) {
       console.error(e);
+      notify.error("Failed to sync appointments.");
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
   }, []);
 
+  // --- 2. Auto-Polling Effect (Every 30 seconds) ---
   useEffect(() => {
-    fetchDocs();
-    const unsub = client.subscribe(
-      `databases.${DATABASE_ID}.collections.${COLLECTION_ID}.documents`,
-      fetchDocs,
-    );
-    return () => unsub();
+    fetchDocs(); // Initial load
+
+    const pollInterval = setInterval(() => {
+      fetchDocs(true); // Silent update in background
+    }, 30000); // 30,000ms = 30 seconds
+
+    return () => clearInterval(pollInterval);
   }, [fetchDocs]);
+
+  // --- 3. Realtime Subscription (Remains as a backup) ---
+  useEffect(() => {
+    const channel = `databases.${DATABASE_ID}.collections.${COLLECTION_ID}.documents`;
+    const unsubscribe = client.subscribe(channel, (response) => {
+      const { events: eventTypes, payload } = response;
+      const transformedPayload = { ...payload, date: new Date(payload.date) };
+
+      if (eventTypes.some((e) => e.includes("create"))) {
+        setEvents((prev) => [...prev, transformedPayload]);
+        notify.success("New appointment received!");
+      }
+      if (eventTypes.some((e) => e.includes("update"))) {
+        setEvents((prev) =>
+          prev.map((doc) =>
+            doc.$id === payload.$id ? transformedPayload : doc,
+          ),
+        );
+      }
+      if (eventTypes.some((e) => e.includes("delete"))) {
+        setEvents((prev) => prev.filter((doc) => doc.$id !== payload.$id));
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const statusCounts = useMemo(
     () => ({
@@ -267,21 +302,46 @@ export default function AppointmentManager() {
               Appointments
             </h1>
           </div>
-          <p className="text-zinc-500 dark:text-zinc-400 font-medium ml-1">
-            Manage patient schedules and clinic queue.
-          </p>
+          <div className="flex items-center gap-2 ml-1 text-zinc-500 dark:text-zinc-400">
+            <p className="text-sm font-medium">Manage patient schedules.</p>
+            <span className="text-[10px] bg-zinc-200 dark:bg-zinc-800 px-2 py-0.5 rounded-full">
+              Last sync:{" "}
+              {lastUpdated.toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+              })}
+            </span>
+          </div>
         </div>
 
-        <button
-          onClick={() => setShowModal(true)}
-          className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/20 transition-all active:scale-95 group"
-        >
-          <Plus
-            size={18}
-            className="group-hover:rotate-90 transition-transform"
-          />
-          <span className="uppercase tracking-widest text-xs">Add Patient</span>
-        </button>
+        <div className="flex items-center gap-3">
+          {/* MANUAL REFRESH BUTTON */}
+          <button
+            onClick={() => fetchDocs()}
+            disabled={isRefreshing}
+            className="p-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-2xl hover:text-emerald-500 transition-all active:rotate-180"
+            title="Refresh appointments"
+          >
+            <RefreshCw
+              size={20}
+              className={clsx(isRefreshing && "animate-spin text-emerald-500")}
+            />
+          </button>
+
+          <button
+            onClick={() => setShowModal(true)}
+            className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/20 transition-all active:scale-95 group"
+          >
+            <Plus
+              size={18}
+              className="group-hover:rotate-90 transition-transform"
+            />
+            <span className="uppercase tracking-widest text-xs">
+              Add Patient
+            </span>
+          </button>
+        </div>
       </div>
 
       <div className="max-w-9xl mx-auto space-y-8">
